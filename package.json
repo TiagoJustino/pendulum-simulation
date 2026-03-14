@@ -12,7 +12,8 @@
   "type": "commonjs",
   "workspaces": [
     "backend",
-    "frontend"
+    "frontend",
+    "common"
   ],
   "devDependencies": {
     "prettier": "^3.8.1"
