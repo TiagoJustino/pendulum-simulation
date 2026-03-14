@@ -1,8 +1,8 @@
-import { Stage, Layer, Circle } from "react-konva";
+import ResponsiveStage from "./ResponsiveStage.tsx";
 
 function App() {
   return (
-    <>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 16px)" }}>
       <section id="center">
         <div>
           <h1>Pendulum Simulation</h1>
@@ -11,12 +11,8 @@ function App() {
           </p>
         </div>
       </section>
-      <Stage width={window.innerWidth} height={window.innerHeight}>
-        <Layer>
-          <Circle radius={50} fill="black" />
-        </Layer>
-      </Stage>
-    </>
+      <ResponsiveStage />
+    </div>
   );
 }
 
