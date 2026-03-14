@@ -1,12 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import { Stage, Layer, Circle, Line } from "react-konva";
+import { Stage } from "react-konva";
 import type { Point } from "@pendulum-simulation/common";
+import Pendulum from "./Pendulum.tsx";
+import { useInitPendulum, useGetPosition } from "./hooks/usePendulum.ts";
 
 const ResponsiveStage = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [pivotPosition, setPivotPosition] = useState<Point>({ x: 0, y: 0 });
   const [bobPosition, setBobPosition] = useState<Point>({ x: 0, y: 0 });
+
+  useInitPendulum({angle: 30, length: 450});
+
+  const { data: position } = useGetPosition();
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -35,11 +41,13 @@ const ResponsiveStage = () => {
   }, [dimensions]);
 
   useEffect(() => {
-    setBobPosition({
-      x: pivotPosition.x + 100,
-      y: pivotPosition.y + 300,
-    });
-  }, [pivotPosition]);
+    if (position) {
+      setBobPosition({
+        x: pivotPosition.x + position.x,
+        y: pivotPosition.y + position.y,
+      });
+    }
+  }, [position, pivotPosition]);
 
   return (
     <div
@@ -52,30 +60,7 @@ const ResponsiveStage = () => {
       }}
     >
       <Stage width={dimensions.width} height={dimensions.height}>
-        <Layer>
-          <Circle
-            x={pivotPosition.x}
-            y={pivotPosition.y}
-            radius={5}
-            fill="black"
-          />
-          <Line
-            points={[
-              pivotPosition.x,
-              pivotPosition.y,
-              bobPosition.x,
-              bobPosition.y,
-            ]}
-            strokeWidth={2}
-            stroke="black"
-          />
-          <Circle
-            x={bobPosition.x}
-            y={bobPosition.y}
-            radius={25}
-            fill="black"
-          />
-        </Layer>
+        <Pendulum {...{ pivotPosition, bobPosition }} />
       </Stage>
     </div>
   );

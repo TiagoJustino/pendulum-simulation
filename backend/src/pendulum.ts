@@ -17,7 +17,7 @@ cos(angle) = y / l => y = l * cos(angle)
 
  */
 
-const GRAVITY = 9.8;
+const GRAVITY = 1;
 
 export class Pendulum {
   private bobPosition: Point;
@@ -57,7 +57,7 @@ export class Pendulum {
     const angleAccel = (-1 * resultantForce) / this.length;
     this.angleVelocity += angleAccel;
     this.angle += this.angleVelocity;
-    this.bobPosition.x = this.length * Math.cos(this.angle);
-    this.bobPosition.y = this.length * Math.sin(this.angle);
+    this.bobPosition.x = this.length * Math.sin(this.angle);
+    this.bobPosition.y = this.length * Math.cos(this.angle);
   }
 }

@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 
 import type { Application, Request, Response, NextFunction } from "express";
 import type { InitPendulumDto } from "@pendulum-simulation/common";
@@ -6,6 +7,7 @@ import { Pendulum } from "./pendulum.js";
 
 const app: Application = express();
 
+app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
 
 let pendulum: Pendulum;
