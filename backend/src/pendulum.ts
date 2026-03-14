@@ -27,12 +27,12 @@ export class Pendulum {
   private angle: number;
   private angleVelocity: number;
   private intervalId;
-  private mqttClient: mqtt.MqttClient | null = null;
 
+  // angle is in degrees, length is in pixels
   constructor(
-    // angle in degrees
     angle: number,
     private length: number,
+    private mqttClient: mqtt.MqttClient | null = null,
   ) {
     this.angle = angle * (Math.PI / 180);
     // initial bob position is calculated based on the initial angle and length
@@ -42,13 +42,11 @@ export class Pendulum {
     };
     // initially, the pendulum is at rest, so angle velocity is 0
     this.angleVelocity = 0;
-    // update the pendulum position every 15ms
-    this.intervalId = setInterval(() => this.nextPosition(), 15);
-  }
-
-  async mqttConnect(): Promise<void> {
-    await this.mqttDisconnect();
-    this.mqttClient = await mqtt.connectAsync("mqtt://127.0.0.1:1883");
+    // update and publish the pendulum position every 15ms
+    this.intervalId = setInterval(() => {
+      this.nextPosition();
+      this.mqttPublishPosition();
+    }, 15);
   }
 
   async mqttDisconnect(): Promise<void> {
@@ -82,6 +80,5 @@ export class Pendulum {
     this.angle += this.angleVelocity;
     this.bobPosition.x = this.length * Math.sin(this.angle);
     this.bobPosition.y = this.length * Math.cos(this.angle);
-    this.mqttPublishPosition();
   }
 }
