@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from "react";
 import { Stage } from "react-konva";
-import type { Point } from "@pendulum-simulation/common";
+import { useInitPendulum } from "./hooks/usePendulum.ts";
+import { useMqttSubscribe } from "@artcom/mqtt-topping-react";
+import { useState, useEffect, useRef } from "react";
 import Pendulum from "./Pendulum.tsx";
-import { useInitPendulum, useGetPosition } from "./hooks/usePendulum.ts";
+import type { Point } from "@pendulum-simulation/common";
 
 const ResponsiveStage = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -12,7 +13,12 @@ const ResponsiveStage = () => {
 
   useInitPendulum({angle: 30, length: 450});
 
-  const { data: position } = useGetPosition();
+  useMqttSubscribe("my/topic", (position: Point, _topic) => {
+    setBobPosition({
+      x: pivotPosition.x + position.x,
+      y: pivotPosition.y + position.y,
+    });
+  });
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -39,15 +45,6 @@ const ResponsiveStage = () => {
       y: 25,
     });
   }, [dimensions]);
-
-  useEffect(() => {
-    if (position) {
-      setBobPosition({
-        x: pivotPosition.x + position.x,
-        y: pivotPosition.y + position.y,
-      });
-    }
-  }, [position, pivotPosition]);
 
   return (
     <div

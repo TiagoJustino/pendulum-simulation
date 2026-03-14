@@ -13,7 +13,7 @@
     "frontend:build": "npm run build -w frontend",
     "frontend:dev": "npm run dev -w frontend",
     "frontend:start": "npm start -w frontend",
-    "mqtt:start": "aedes start",
+    "mqtt:start": "aedes start --protos tcp ws",
     "mqtt:log": "mqtt sub -t '#' -h localhost -v"
   },
   "keywords": [],

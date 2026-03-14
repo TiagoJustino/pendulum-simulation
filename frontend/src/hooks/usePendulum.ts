@@ -21,6 +21,9 @@ export const useInitPendulum = (body: InitPendulumDto) => {
   return mutation;
 };
 
+/**
+ * Deprecated in favor of useMqttSubscribe
+ */
 export const useGetPosition = () =>
   useQuery<Point>({
     queryKey: ["position"],
