@@ -1,25 +1,40 @@
-import express from 'express';
+import express from "express";
 
-import type {Application, Request, Response, NextFunction } from 'express';
-
+import type { Application, Request, Response, NextFunction } from "express";
+import type { InitPendulumDto } from "@pendulum-simulation/common";
+import { Pendulum } from "./pendulum.js";
 
 const app: Application = express();
 
-// 1. Basic Middleware
 app.use(express.json());
 
-// 2. Health Check Route
-app.get('/', (_req: Request, res: Response) => {
-    res.status(200).json({ status: 'UP' });
+let pendulum: Pendulum;
+
+app.post(
+  "/init",
+  (req: Request<{}, {}, InitPendulumDto>, res: Response) => {
+    // TODO: validate input
+    const initPendulumDto = req.body;
+    if (pendulum) {
+      pendulum.dispose();
+    }
+    pendulum = new Pendulum(initPendulumDto.angle, initPendulumDto.length);
+    res.status(200).json({ success: true });
+  },
+);
+
+app.get("/position", (_req: Request, res: Response) => {
+  if (!pendulum) {
+    res.status(500).json({ error: "Pendulum not initialized" });
+    return;
+  }
+  const position = pendulum.getBobPosition();
+  res.status(200).json({ x: position.x, y: position.y });
 });
 
-// 3. Define Routes (Example)
-// app.use('/api/v1/users', userRouter);
-
-// 4. Global Error Handler
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error(err.stack);
-    res.status(500).send('Something went wrong!');
+  console.error(err.stack);
+  res.status(500).send("Something went wrong!");
 });
 
 export default app;

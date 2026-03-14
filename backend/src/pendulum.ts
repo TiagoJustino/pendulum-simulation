@@ -24,6 +24,7 @@ export class Pendulum {
   // angle in radians
   private angle: number;
   private angleVelocity: number;
+  private intervalId;
 
   constructor(
     // angle in degrees
@@ -38,6 +39,12 @@ export class Pendulum {
     };
     // initially, the pendulum is at rest, so angle velocity is 0
     this.angleVelocity = 0;
+    // update the pendulum position every 15ms
+    this.intervalId = setInterval(() => this.nextPosition(), 15);
+  }
+
+  dispose(): void {
+    clearInterval(this.intervalId);
   }
 
   getBobPosition(): Point {
