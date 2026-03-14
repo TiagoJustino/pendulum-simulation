@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "npm run dev -ws"
+    "dev": "npm run dev --ws"
   },
   "keywords": [],
   "author": "",
