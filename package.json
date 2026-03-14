@@ -4,9 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "backend:build": "npm run build -w backend",
     "backend:dev": "npm run dev -w backend",
-    "dev": "run-p -l backend:dev frontend:dev",
-    "frontend:dev": "npm run dev -w frontend"
+    "backend:start": "npm start -w backend",
+    "build": "run-s -l backend:build frontend:build",
+    "dev": "run-p -l mqtt:start backend:dev frontend:dev",
+    "start": "run-p -l mqtt:start backend:start frontend:start",
+    "frontend:build": "npm run build -w frontend",
+    "frontend:dev": "npm run dev -w frontend",
+    "frontend:start": "npm start -w frontend",
+    "mqtt:start": "aedes start",
+    "mqtt:log": "mqtt sub -t '#' -h localhost -v"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +26,11 @@
     "common"
   ],
   "devDependencies": {
+    "mqtt-cli": "^0.2.4",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.8.1"
+  },
+  "dependencies": {
+    "aedes-cli": "^0.9.0"
   }
 }

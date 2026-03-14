@@ -7,23 +7,21 @@ import { Pendulum } from "./pendulum.js";
 
 const app: Application = express();
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({ origin: ["http://localhost:5173", "http://localhost:4173"] }));
 app.use(express.json());
 
 let pendulum: Pendulum;
 
-app.post(
-  "/init",
-  (req: Request<{}, {}, InitPendulumDto>, res: Response) => {
-    // TODO: validate input
-    const initPendulumDto = req.body;
-    if (pendulum) {
-      pendulum.dispose();
-    }
-    pendulum = new Pendulum(initPendulumDto.angle, initPendulumDto.length);
-    res.status(200).json({ success: true });
-  },
-);
+app.post("/init", async (req: Request<{}, {}, InitPendulumDto>, res: Response) => {
+  // TODO: validate input
+  const initPendulumDto = req.body;
+  if (pendulum) {
+    pendulum.dispose();
+  }
+  pendulum = new Pendulum(initPendulumDto.angle, initPendulumDto.length);
+  await pendulum.mqttConnect();
+  res.status(200).json({ success: true });
+});
 
 app.get("/position", (_req: Request, res: Response) => {
   if (!pendulum) {

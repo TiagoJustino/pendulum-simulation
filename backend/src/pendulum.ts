@@ -1,4 +1,6 @@
-import type { Point } from '@pendulum-simulation/common';
+import * as mqtt from "mqtt";
+
+import type { Point } from "@pendulum-simulation/common";
 
 /*
 ## References:
@@ -25,6 +27,7 @@ export class Pendulum {
   private angle: number;
   private angleVelocity: number;
   private intervalId;
+  private mqttClient: mqtt.MqttClient | null = null;
 
   constructor(
     // angle in degrees
@@ -43,12 +46,32 @@ export class Pendulum {
     this.intervalId = setInterval(() => this.nextPosition(), 15);
   }
 
-  dispose(): void {
+  async mqttConnect(): Promise<void> {
+    await this.mqttDisconnect();
+    this.mqttClient = await mqtt.connectAsync("mqtt://127.0.0.1:1883");
+  }
+
+  async mqttDisconnect(): Promise<void> {
+    if (this.mqttClient) {
+      this.mqttClient.end(false, () => {
+        console.log("Client disconnected gracefully");
+      });
+    }
+  }
+
+  async dispose(): Promise<void> {
     clearInterval(this.intervalId);
+    await this.mqttDisconnect();
   }
 
   getBobPosition(): Point {
     return this.bobPosition;
+  }
+
+  mqttPublishPosition(): void {
+    if (this.mqttClient) {
+      this.mqttClient.publish("my/topic", JSON.stringify(this.bobPosition));
+    }
   }
 
   // Update the pendulum's position to next frame
@@ -59,5 +82,6 @@ export class Pendulum {
     this.angle += this.angleVelocity;
     this.bobPosition.x = this.length * Math.sin(this.angle);
     this.bobPosition.y = this.length * Math.cos(this.angle);
+    this.mqttPublishPosition();
   }
 }
