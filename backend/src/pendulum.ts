@@ -37,8 +37,8 @@ export class Pendulum {
     this.angle = angle * (Math.PI / 180);
     // initial bob position is calculated based on the initial angle and length
     this.bobPosition = {
-      x: length * Math.cos(this.angle),
-      y: length * Math.sin(this.angle),
+      x: length * Math.sin(this.angle),
+      y: length * Math.cos(this.angle),
     };
     // initially, the pendulum is at rest, so angle velocity is 0
     this.angleVelocity = 0;

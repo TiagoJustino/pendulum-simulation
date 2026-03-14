@@ -7,9 +7,11 @@
     "backend:build": "npm run build -w backend",
     "backend:dev": "npm run dev -w backend",
     "backend:start": "npm start -w backend",
+    "backend:test": "npm test -w backend",
     "build": "run-s -l backend:build frontend:build",
     "dev": "run-p -l mqtt:start backend:dev frontend:dev",
     "start": "run-p -l mqtt:start backend:start frontend:start",
+    "test": "run-s -l backend:test",
     "frontend:build": "npm run build -w frontend",
     "frontend:dev": "npm run dev -w frontend",
     "frontend:start": "npm start -w frontend",
@@ -27,10 +29,10 @@
   ],
   "devDependencies": {
     "mqtt-cli": "^0.2.4",
-    "npm-run-all": "^4.1.5",
     "prettier": "^3.8.1"
   },
   "dependencies": {
-    "aedes-cli": "^0.9.0"
+    "aedes-cli": "^0.9.0",
+    "npm-run-all": "^4.1.5"
   }
 }
