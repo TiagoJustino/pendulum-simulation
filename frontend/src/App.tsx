@@ -18,7 +18,7 @@ function App() {
           </p>
         </div>
       </section>
-      <MqttProvider uri="ws://127.0.0.1:3000/mqtt">
+      <MqttProvider uri="ws://127.0.0.1:3001/mqtt">
         <ResponsiveStage />
       </MqttProvider>
     </div>

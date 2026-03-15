@@ -12,10 +12,6 @@ const ResponsiveStage = () => {
   const { data: pendulum } = useInitPendulum({ angle: 30, length: 450 });
 
   useEffect(() => {
-    console.log(JSON.stringify({ pendulum }, null, 2));
-  }, [pendulum]);
-
-  useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
         setDimensions({
