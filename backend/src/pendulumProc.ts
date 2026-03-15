@@ -34,6 +34,10 @@ process.on("message", (msg: any) => {
     case "POSITION":
       console.log(JSON.stringify(pendulum.getRelativeBobPosition()));
       break;
+    case "UPDATE":
+      process.stderr.write(`${msg.command} ${msg.data}\n`);
+      pendulum.update(msg.data);
+      break;
     case "SHUTDOWN":
       console.log("Worker received shutdown command. Cleaning up...");
       pendulum.dispose();

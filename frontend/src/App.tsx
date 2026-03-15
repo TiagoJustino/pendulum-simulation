@@ -1,7 +1,14 @@
+import { useState } from "react";
 import ResponsiveStage from "./ResponsiveStage.tsx";
 import { MqttProvider } from "@artcom/mqtt-topping-react";
+import Toolbox from "./Toolbox.tsx";
+
+const MIN_INSTANCES = 1;
+const MAX_INSTANCES = 10;
 
 function App() {
+  const [numPendulums, setNumPendulums] = useState(5);
+
   return (
     <div
       style={{
@@ -11,15 +18,25 @@ function App() {
       }}
     >
       <section id="center">
-        <div>
-          <h1>Pendulum Simulation</h1>
-          <p>
-            This is a Simple Pendulum simulation using React and Typescript.
-          </p>
+        <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+          <div>
+            <h1>Pendulum Simulation</h1>
+            <p>
+              This is a Simple Pendulum simulation using React and Typescript.
+            </p>
+          </div>
+          <Toolbox
+            onDecrease={() =>
+              setNumPendulums((n) => Math.max(MIN_INSTANCES, n - 1))
+            }
+            onIncrease={() =>
+              setNumPendulums((n) => Math.min(MAX_INSTANCES, n + 1))
+            }
+          />
         </div>
       </section>
-      <MqttProvider uri="ws://127.0.0.1:3001/mqtt">
-        <ResponsiveStage />
+      <MqttProvider uri="ws://127.0.0.1:3002/mqtt">
+        <ResponsiveStage numPendulums={numPendulums} />
       </MqttProvider>
     </div>
   );

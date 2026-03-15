@@ -15,7 +15,7 @@
     "frontend:build": "npm run build -w frontend",
     "frontend:dev": "npm run dev -w frontend",
     "frontend:start": "npm start -w frontend",
-    "mqtt:start": "aedes start --ws-port 3001 --protos tcp ws",
+    "mqtt:start": "aedes start --ws-port 3002 --protos tcp ws",
     "mqtt:log": "mqtt sub -t '#' -h localhost -v"
   },
   "keywords": [],

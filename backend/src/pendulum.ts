@@ -1,4 +1,8 @@
-import type { AbsolutePosition, Point } from "@pendulum-simulation/common";
+import type {
+  AbsolutePosition,
+  InitPendulumRequestDto,
+  Point,
+} from "@pendulum-simulation/common";
 import type { PendulumMqttClient } from "./MqttClient.js";
 
 /*
@@ -25,7 +29,7 @@ enum Command {
   START = "START",
 }
 
-const GRAVITY = 1;
+const GRAVITY = 2;
 
 export class Pendulum {
   private bobPosition: Point | undefined;
@@ -63,7 +67,7 @@ export class Pendulum {
     this.intervalId = setInterval(async () => {
       this.nextPosition();
       await this.mqttPublishPosition();
-    }, 15);
+    }, 30);
   }
 
   async mqttDisconnect(): Promise<void> {
@@ -90,7 +94,6 @@ export class Pendulum {
   }
 
   async onCommand(command: string): Promise<void> {
-    console.log("Received command:", command);
     if (command === Command.STOP) {
       this.pause();
       setTimeout(() => {
@@ -112,6 +115,16 @@ export class Pendulum {
   async dispose(): Promise<void> {
     this.pause();
     await this.mqttDisconnect();
+  }
+
+  update(data: InitPendulumRequestDto) {
+    this.pause();
+    this.initialAngle = data.angle;
+    this.length = data.length;
+    this.pivotPosition.x = data.pivotPosition.x;
+    this.pivotPosition.y = data.pivotPosition.y;
+    this.init();
+    this.start();
   }
 
   getRelativeBobPosition(): Point {

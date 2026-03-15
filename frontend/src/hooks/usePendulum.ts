@@ -13,18 +13,24 @@ import type {
 
 const API_BASE = "http://localhost:3000";
 
-export const useInitPendulum = (body: InitPendulumRequestDto, enabled = true) => {
+export const useInitPendulum = (
+  body: InitPendulumRequestDto,
+  enabled = true,
+) => {
   const mutation: UseMutationResult<
     InitPendulumResponseDto,
     Error,
     InitPendulumRequestDto
   > = useMutation({
-    mutationFn: (dto: InitPendulumRequestDto) =>
-      fetch(`${API_BASE}/add-pendulum`, {
+    mutationFn: async (dto: InitPendulumRequestDto) => {
+      console.log("useInitPendulum", JSON.stringify(dto));
+      const res = await fetch(`${API_BASE}/add-pendulum`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto),
-      }).then((res) => res.json()),
+      });
+      return await res.json();
+    },
   });
 
   useEffect(() => {
@@ -36,13 +42,39 @@ export const useInitPendulum = (body: InitPendulumRequestDto, enabled = true) =>
   return mutation;
 };
 
-export const useClear = () => {
-  const mutation = useMutation<ClearResponseDto>({
-    mutationFn: () =>
-      fetch(`${API_BASE}/pendulum`, {
+export const useUpdatePendulum = (id: string) =>
+  useMutation({
+    mutationFn: async (dto: InitPendulumRequestDto) => {
+      console.log('useUpdatePendulum', JSON.stringify(dto));
+      const res = await fetch(`${API_BASE}/pendulum/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dto),
+      });
+      return await res.json();
+    },
+  });
+
+export const useDeletePendulum = (id: string) =>
+  useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API_BASE}/pendulum/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-      }).then((res) => res.json()),
+      });
+      return await res.json();
+    },
+  });
+
+export const useClear = () => {
+  const mutation = useMutation<ClearResponseDto>({
+    mutationFn: async () => {
+      const res = await fetch(`${API_BASE}/pendulum`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      return await res.json();
+    },
   });
 
   useEffect(() => {
@@ -58,6 +90,9 @@ export const useClear = () => {
 export const useGetPosition = () =>
   useQuery<Point>({
     queryKey: ["position"],
-    queryFn: () => fetch(`${API_BASE}/position`).then((res) => res.json()),
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/position`);
+      return await res.json();
+    },
     refetchInterval: 100,
   });

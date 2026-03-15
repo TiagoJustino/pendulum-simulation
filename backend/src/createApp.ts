@@ -47,10 +47,14 @@ export function createApp() {
 
   const instances: Record<string, ChildProcess> = {};
 
+  const shutdownInstance = (id: string) => {
+    instances[id]?.send({ command: "SHUTDOWN" });
+    delete instances[id];
+  };
+
   const shutdownAllInstances = () => {
     for (const id of Object.keys(instances)) {
-      instances[id]?.send({ command: "SHUTDOWN" });
-      delete instances[id];
+      shutdownInstance(id);
     }
   };
 
@@ -58,6 +62,36 @@ export function createApp() {
     shutdownAllInstances();
     res.status(200).json({ success: true });
   });
+
+  app.delete(
+    "/pendulum/:id",
+    async (req: Request<{ id: string }>, res: Response) => {
+      const id = req.params.id;
+      shutdownInstance(id);
+      res.status(200).json({ success: true });
+    },
+  );
+
+  app.put(
+    "/pendulum/:id",
+    async (
+      req: Request<
+        { id: string },
+        InitPendulumResponseDto,
+        InitPendulumRequestDto
+      >,
+      res: Response,
+    ) => {
+      // TODO: validate input
+      const id = req.params.id;
+      console.log(
+        "app.put",
+        JSON.stringify({ command: "UPDATE", data: req.body }),
+      );
+      instances[id]?.send({ command: "UPDATE", data: req.body });
+      res.status(200).json({ success: true });
+    },
+  );
 
   app.post(
     "/add-pendulum",
