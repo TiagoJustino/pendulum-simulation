@@ -1,12 +1,24 @@
 import { useEffect } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import type { InitPendulumDto, Point } from "@pendulum-simulation/common";
+import {
+  useMutation,
+  type UseMutationResult,
+  useQuery,
+} from "@tanstack/react-query";
+import type {
+  InitPendulumRequestDto,
+  InitPendulumResponseDto,
+  Point,
+} from "@pendulum-simulation/common";
 
 const API_BASE = "http://localhost:3000";
 
-export const useInitPendulum = (body: InitPendulumDto) => {
-  const mutation = useMutation({
-    mutationFn: (dto: InitPendulumDto) =>
+export const useInitPendulum = (body: InitPendulumRequestDto) => {
+  const mutation: UseMutationResult<
+    InitPendulumResponseDto,
+    Error,
+    InitPendulumRequestDto
+  > = useMutation({
+    mutationFn: (dto: InitPendulumRequestDto) =>
       fetch(`${API_BASE}/init`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -27,7 +39,6 @@ export const useInitPendulum = (body: InitPendulumDto) => {
 export const useGetPosition = () =>
   useQuery<Point>({
     queryKey: ["position"],
-    queryFn: () =>
-      fetch(`${API_BASE}/position`).then((res) => res.json()),
+    queryFn: () => fetch(`${API_BASE}/position`).then((res) => res.json()),
     refetchInterval: 100,
   });

@@ -1,6 +1,5 @@
-import * as mqtt from "mqtt";
-
 import type { Point } from "@pendulum-simulation/common";
+import type { PendulumMqttClient } from "./MqttClient.js";
 
 /*
 ## References:
@@ -32,7 +31,7 @@ export class Pendulum {
   constructor(
     angle: number,
     private length: number,
-    private mqttClient: mqtt.MqttClient | null = null,
+    private mqttClient: PendulumMqttClient | null = null,
   ) {
     this.angle = angle * (Math.PI / 180);
     // initial bob position is calculated based on the initial angle and length
@@ -51,9 +50,7 @@ export class Pendulum {
 
   async mqttDisconnect(): Promise<void> {
     if (this.mqttClient) {
-      this.mqttClient.end(false, () => {
-        console.log("Client disconnected gracefully");
-      });
+      await this.mqttClient.shutdown();
     }
   }
 
@@ -68,7 +65,7 @@ export class Pendulum {
 
   mqttPublishPosition(): void {
     if (this.mqttClient) {
-      this.mqttClient.publish("my/topic", JSON.stringify(this.bobPosition));
+      this.mqttClient.publish(this.bobPosition);
     }
   }
 

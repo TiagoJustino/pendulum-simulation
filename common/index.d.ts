@@ -3,7 +3,11 @@ export type Point = {
   y: number;
 };
 
-export type InitPendulumDto = {
+export type InitPendulumRequestDto = {
   angle: number;
   length: number;
 }
+
+export type InitPendulumResponseDto = {
+  id: string;
+};

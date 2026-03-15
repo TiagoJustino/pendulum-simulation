@@ -5,7 +5,10 @@ import express, {
   type Response,
 } from "express";
 import cors from "cors";
-import type { InitPendulumDto } from "@pendulum-simulation/common";
+import type {
+  InitPendulumRequestDto,
+  InitPendulumResponseDto,
+} from "@pendulum-simulation/common";
 import { uuidv7 } from "uuidv7";
 import { fork } from "child_process";
 import type { ChildProcess, Serializable } from "node:child_process";
@@ -44,20 +47,26 @@ export function createApp() {
 
   const instances: Record<string, ChildProcess> = {};
 
+  const shutdownAllInstances = () => {
+    for (const id of Object.keys(instances)) {
+      instances[id]?.send({ command: "SHUTDOWN" });
+      delete instances[id];
+    }
+  };
+
   app.post(
     "/init",
-    async (req: Request<{}, {}, InitPendulumDto>, res: Response) => {
+    async (
+      req: Request<{}, InitPendulumResponseDto, InitPendulumRequestDto>,
+      res: Response,
+    ) => {
       // TODO: validate input
-      const initPendulumDto = req.body;
+      const { angle, length } = req.body;
       const id = uuidv7();
-      const args = [initPendulumDto.angle, initPendulumDto.length].map(
-        (v) => `${v}`,
-      );
-      // instances[id] = fork(`./src/pendulumProc.${isTsx ? "ts" : "js"}`, args);
+      shutdownAllInstances();
+      const args = [id, `${angle}`, `${length}`];
       instances[id] = fork([".", scriptDir, "pendulumProc"].join("/"), args);
-      // TODO:
-      // call instances[id].send({ command: 'SHUTDOWN' }) for finishing child process
-      res.status(200).json({ success: true });
+      res.status(200).json({ id });
     },
   );
 
