@@ -66,9 +66,10 @@ export function createApp() {
       res: Response,
     ) => {
       // TODO: validate input
-      const { angle, length } = req.body;
+      const { angle, length, pivotPosition } = req.body;
+      const { x, y } = pivotPosition;
       const id = uuidv7();
-      const args = [id, `${angle}`, `${length}`];
+      const args = [id, `${angle}`, `${length}`, `${x}`, `${y}`];
       instances[id] = fork([".", scriptDir, "pendulumProc"].join("/"), args);
       res.status(200).json({ id });
     },

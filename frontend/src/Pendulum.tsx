@@ -1,5 +1,5 @@
 import { Circle, Layer, Line } from "react-konva";
-import type { Point } from "@pendulum-simulation/common";
+import type { AbsolutePosition, Point } from "@pendulum-simulation/common";
 import { useMqttSubscribe } from "@artcom/mqtt-topping-react";
 import { useState } from "react";
 import { useInitPendulum } from "./hooks/usePendulum.ts";
@@ -13,14 +13,20 @@ interface Props {
 
 const Pendulum = ({ pivotPosition, angle, length, enabled }: Props) => {
   const [bobPosition, setBobPosition] = useState<Point>({ x: 0, y: 0 });
-  const { data: pendulum } = useInitPendulum({ angle, length }, enabled);
+  const { data: pendulum } = useInitPendulum(
+    { angle, length, pivotPosition },
+    pivotPosition && enabled,
+  );
 
-  useMqttSubscribe(`pendulum/${pendulum?.id}/position`, (position: Point, _topic) => {
-    setBobPosition({
-      x: pivotPosition.x + position.x,
-      y: pivotPosition.y + position.y,
-    });
-  });
+  useMqttSubscribe(
+    `pendulum/${pendulum?.id}/position`,
+    (position: AbsolutePosition, _topic) => {
+      setBobPosition({
+        x: position.bobPosition.x,
+        y: position.bobPosition.y,
+      });
+    },
+  );
 
   return (
     <Layer>

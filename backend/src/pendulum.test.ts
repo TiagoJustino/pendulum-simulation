@@ -8,24 +8,24 @@ describe("Pendulum", () => {
   describe("nextPosition()", () => {
     it("bob moves from initial position after one step", () => {
       const pendulum = new Pendulum(30, 450, null);
-      const initial = { ...pendulum.getBobPosition() };
+      const initial = { ...pendulum.getRelativeBobPosition() };
 
       pendulum.nextPosition();
 
-      expect(pendulum.getBobPosition()).not.toEqual(initial);
+      expect(pendulum.getRelativeBobPosition()).not.toEqual(initial);
       pendulum.dispose();
     });
 
     it("bob swings past middle position to the opposite side", () => {
       const pendulum = new Pendulum(30, 450, null);
-      const initialX = pendulum.getBobPosition().x;
+      const initialX = pendulum.getRelativeBobPosition().x;
       expect(initialX).toBeGreaterThan(0);
 
       // Run until x goes negative (bob crossed equilibrium)
       let crossedMiddle = false;
       for (let i = 0; i < 500; i++) {
         pendulum.nextPosition();
-        if (pendulum.getBobPosition().x < 0) {
+        if (pendulum.getRelativeBobPosition().x < 0) {
           crossedMiddle = true;
           break;
         }
@@ -39,10 +39,10 @@ describe("Pendulum", () => {
       const pendulum = new Pendulum(0, 450, null);
 
       pendulum.nextPosition();
-      const afterFirst = { ...pendulum.getBobPosition() };
+      const afterFirst = { ...pendulum.getRelativeBobPosition() };
       pendulum.nextPosition();
 
-      expect(pendulum.getBobPosition()).toEqual(afterFirst);
+      expect(pendulum.getRelativeBobPosition()).toEqual(afterFirst);
       pendulum.dispose();
     });
   });

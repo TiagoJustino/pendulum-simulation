@@ -1,4 +1,4 @@
-import type { Point } from "@pendulum-simulation/common";
+import type { AbsolutePosition, Point } from "@pendulum-simulation/common";
 import type { PendulumMqttClient } from "./MqttClient.js";
 
 /*
@@ -18,33 +18,51 @@ cos(angle) = y / l => y = l * cos(angle)
 
  */
 
+enum Command {
+  RESTART = "RESTART",
+  STOP = "STOP",
+  PAUSE = "PAUSE",
+  START = "START",
+}
+
 const GRAVITY = 1;
 
 export class Pendulum {
-  private bobPosition: Point;
+  private bobPosition: Point | undefined;
   // angle in radians
-  private angle: number;
-  private angleVelocity: number;
-  private intervalId;
+  private angle: number | undefined;
+  private angleVelocity: number | undefined;
+  private intervalId: NodeJS.Timeout | undefined;
 
   // angle is in degrees, length is in pixels
   constructor(
-    angle: number,
+    private initialAngle: number,
     private length: number,
+    private pivotPosition: Point,
     private mqttClient: PendulumMqttClient | null = null,
   ) {
-    this.angle = angle * (Math.PI / 180);
-    // initial bob position is calculated based on the initial angle and length
+    this.init();
+    this.start();
+  }
+
+  init() {
+    this.angle = this.initialAngle * (Math.PI / 180);
     this.bobPosition = {
-      x: length * Math.sin(this.angle),
-      y: length * Math.cos(this.angle),
+      x: this.length * Math.sin(this.angle),
+      y: this.length * Math.cos(this.angle),
     };
-    // initially, the pendulum is at rest, so angle velocity is 0
     this.angleVelocity = 0;
+  }
+
+  start() {
+    // Skip if already started
+    if (this.intervalId) {
+      return;
+    }
     // update and publish the pendulum position every 15ms
-    this.intervalId = setInterval(() => {
+    this.intervalId = setInterval(async () => {
       this.nextPosition();
-      this.mqttPublishPosition();
+      await this.mqttPublishPosition();
     }, 15);
   }
 
@@ -54,28 +72,75 @@ export class Pendulum {
     }
   }
 
+  checkColision(position: AbsolutePosition): boolean {
+    const bobAPosition = this.getAbsoluteBobPosition();
+    const bobBPosition = position.bobPosition;
+    const xDist = Math.abs(bobAPosition.x - bobBPosition.x);
+    const yDist = Math.abs(bobAPosition.y - bobBPosition.y);
+    const dist = Math.sqrt(xDist ** 2 + yDist ** 2);
+    // TODO: consider variable sizes
+    return dist <= 50;
+  }
+
+  // TODO: Consider pivotPosition
+  async onPosition(position: AbsolutePosition): Promise<void> {
+    if (this.checkColision(position)) {
+      await this.mqttClient!.publishCommand(Command.STOP);
+    }
+  }
+
+  async onCommand(command: string): Promise<void> {
+    console.log("Received command:", command);
+    if (command === Command.STOP) {
+      this.pause();
+      setTimeout(() => {
+        this.mqttClient?.publishCommand(Command.RESTART);
+      }, 5000);
+    } else if (command === Command.RESTART) {
+      this.init();
+      this.start();
+    }
+  }
+
+  pause() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = undefined;
+    }
+  }
+
   async dispose(): Promise<void> {
-    clearInterval(this.intervalId);
+    this.pause();
     await this.mqttDisconnect();
   }
 
-  getBobPosition(): Point {
-    return this.bobPosition;
+  getRelativeBobPosition(): Point {
+    return this.bobPosition!;
   }
 
-  mqttPublishPosition(): void {
+  getAbsoluteBobPosition(): Point {
+    return {
+      x: this.bobPosition!.x + this.pivotPosition.x,
+      y: this.bobPosition!.y + this.pivotPosition.y,
+    };
+  }
+
+  async mqttPublishPosition(): Promise<void> {
     if (this.mqttClient) {
-      this.mqttClient.publish(this.bobPosition);
+      await this.mqttClient.publishPosition({
+        pivotPosition: this.pivotPosition,
+        bobPosition: this.getAbsoluteBobPosition(),
+      });
     }
   }
 
   // Update the pendulum's position to next frame
   nextPosition(): void {
-    const resultantForce = GRAVITY * Math.sin(this.angle);
+    const resultantForce = GRAVITY * Math.sin(this.angle!);
     const angleAccel = (-1 * resultantForce) / this.length;
-    this.angleVelocity += angleAccel;
-    this.angle += this.angleVelocity;
-    this.bobPosition.x = this.length * Math.sin(this.angle);
-    this.bobPosition.y = this.length * Math.cos(this.angle);
+    this.angleVelocity! += angleAccel;
+    this.angle! += this.angleVelocity!;
+    this.bobPosition!.x = this.length * Math.sin(this.angle!);
+    this.bobPosition!.y = this.length * Math.cos(this.angle!);
   }
 }
