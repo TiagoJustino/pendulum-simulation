@@ -11,3 +11,7 @@ export type InitPendulumRequestDto = {
 export type InitPendulumResponseDto = {
   id: string;
 };
+
+export type ClearResponseDto = {
+  success: boolean;
+};

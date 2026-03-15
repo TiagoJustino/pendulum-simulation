@@ -5,6 +5,7 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import type {
+  ClearResponseDto,
   InitPendulumRequestDto,
   InitPendulumResponseDto,
   Point,
@@ -12,14 +13,14 @@ import type {
 
 const API_BASE = "http://localhost:3000";
 
-export const useInitPendulum = (body: InitPendulumRequestDto) => {
+export const useInitPendulum = (body: InitPendulumRequestDto, enabled = true) => {
   const mutation: UseMutationResult<
     InitPendulumResponseDto,
     Error,
     InitPendulumRequestDto
   > = useMutation({
     mutationFn: (dto: InitPendulumRequestDto) =>
-      fetch(`${API_BASE}/init`, {
+      fetch(`${API_BASE}/add-pendulum`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto),
@@ -27,14 +28,32 @@ export const useInitPendulum = (body: InitPendulumRequestDto) => {
   });
 
   useEffect(() => {
-    mutation.mutate(body);
-  }, [body.angle, body.length]);
+    if (enabled) {
+      mutation.mutate(body);
+    }
+  }, [body.angle, body.length, enabled]);
+
+  return mutation;
+};
+
+export const useClear = () => {
+  const mutation = useMutation<ClearResponseDto>({
+    mutationFn: () =>
+      fetch(`${API_BASE}/pendulum`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      }).then((res) => res.json()),
+  });
+
+  useEffect(() => {
+    mutation.mutate();
+  }, [mutation.mutate]);
 
   return mutation;
 };
 
 /**
- * Deprecated in favor of useMqttSubscribe
+ * @Deprecated - use useMqttSubscribe
  */
 export const useGetPosition = () =>
   useQuery<Point>({

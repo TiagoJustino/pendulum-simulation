@@ -54,8 +54,13 @@ export function createApp() {
     }
   };
 
+  app.delete("/pendulum", async (_req: Request, res: Response) => {
+    shutdownAllInstances();
+    res.status(200).json({ success: true });
+  });
+
   app.post(
-    "/init",
+    "/add-pendulum",
     async (
       req: Request<{}, InitPendulumResponseDto, InitPendulumRequestDto>,
       res: Response,
@@ -63,14 +68,13 @@ export function createApp() {
       // TODO: validate input
       const { angle, length } = req.body;
       const id = uuidv7();
-      shutdownAllInstances();
       const args = [id, `${angle}`, `${length}`];
       instances[id] = fork([".", scriptDir, "pendulumProc"].join("/"), args);
       res.status(200).json({ id });
     },
   );
 
-  // Deprecated in favor of mqtt
+  // @Deprecated in favor of mqtt
   app.get(
     "/position/:id",
     async (req: Request<{ id: string }>, res: Response) => {
