@@ -184,7 +184,49 @@ Each pendulum accepts the following parameters via the REST API:
 
 ## UI Controls
 
-> **TODO:** Start, pause, and stop buttons not yet implemented. Currently the simulation starts automatically on init. The configuration UI for per-pendulum parameters (angle, mass, length, anchor) is also pending.
+The toolbar tracks a `SimulationState` with four values:
+
+| State | Description |
+|---|---|
+| `running` | Pendulums are actively animating |
+| `paused` | Animation is frozen; can be resumed |
+| `stopped` | Animation is reset to initial position; pendulum count can be changed |
+| `restarting` | A collision was detected; countdown is active before auto-restart |
+
+### State Transitions
+
+```mermaid
+flowchart LR
+    START(( )) --> running
+
+    running -->|Pause| paused
+    paused -->|Play| running
+
+    running -->|Stop| stopped
+    paused -->|Stop| stopped
+    restarting -->|Stop| stopped
+
+    stopped -->|Play| running
+
+    running -->|"collision detected\n(MQTT)"| restarting
+    restarting -->|"countdown\nreaches 0"| running
+```
+
+### Button Enable/Disable Rules
+
+| Button | `running` | `paused` | `stopped` | `restarting` |
+|---|---|---|---|---|
+| **− / + (instances)** | disabled | disabled | **enabled** | disabled |
+| **Pause** | **enabled** | disabled | disabled | disabled |
+| **Stop** | **enabled** | **enabled** | disabled | **enabled** |
+| **Play** | disabled | **enabled** | **enabled** | disabled |
+
+### Notes
+
+- Instance count can only be changed in `stopped` state.
+- The `restarting` state is driven entirely by the MQTT `pendulum/countdown` topic — it is not triggered by a button.
+- Pressing Stop during `restarting` clears the countdown immediately and moves to `stopped`, preventing any auto-transition back to `running`.
+- On mount, the frontend calls `play()` to sync the backend to `running`.
 
 ## API
 

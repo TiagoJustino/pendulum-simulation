@@ -20,14 +20,19 @@ interface Props {
 }
 
 const Pendulum = ({ stageWidth, enabled }: Props) => {
-  const [bobPosition, setBobPosition] = useState<Point>({ x: 0, y: 0 });
+  const [bobPosition, setBobPosition] = useState<Point | null>(null);
   const [angle] = useState(() => randomInt(0, 89));
   const [length] = useState(() => randomInt(100, 500));
   const [mass] = useState(() => randomInt(15, 40));
-  const [shouldRender, setShouldRender] = useState(false);
   const [pivotPosition, setPivotPosition] = useState<Point>(() => {
     return { x: randomInt(25, stageWidth - 25), y: 25 };
   });
+
+  const initialBobPosition: Point = {
+    x: pivotPosition.x + length * Math.sin((angle * Math.PI) / 180),
+    y: pivotPosition.y + length * Math.cos((angle * Math.PI) / 180),
+  };
+  const displayBobPosition = bobPosition ?? initialBobPosition;
   const { data: pendulum } = useInitPendulum(
     { angle, length, mass, pivotPosition },
     pivotPosition && enabled,
@@ -50,10 +55,7 @@ const Pendulum = ({ stageWidth, enabled }: Props) => {
   useMqttSubscribe(
     `pendulum/${pendulum?.id}/position`,
     (position: AbsolutePosition, _topic) => {
-      setBobPosition({
-        x: position.bobPosition.x,
-        y: position.bobPosition.y,
-      });
+      setBobPosition({ x: position.bobPosition.x, y: position.bobPosition.y });
     },
   );
 
@@ -64,47 +66,20 @@ const Pendulum = ({ stageWidth, enabled }: Props) => {
     };
   }, []);
 
-  useEffect(() => {
-    if (!pivotPosition) {
-      return setShouldRender(false);
-    }
-    if (!bobPosition) {
-      return setShouldRender(false);
-    }
-    if (bobPosition.x == 0 && bobPosition.y == 0) {
-      return setShouldRender(false);
-    }
-    setShouldRender(true);
-  }, [pivotPosition, bobPosition]);
-
   return (
     <Group>
-      {shouldRender && (
-        <>
-          <Circle
-            x={pivotPosition.x}
-            y={pivotPosition.y}
-            radius={5}
-            fill="black"
-          />
-          <Line
-            points={[
-              pivotPosition.x,
-              pivotPosition.y,
-              bobPosition.x,
-              bobPosition.y,
-            ]}
-            strokeWidth={2}
-            stroke="black"
-          />
-          <Circle
-            x={bobPosition.x}
-            y={bobPosition.y}
-            radius={mass}
-            fill="black"
-          />
-        </>
-      )}
+      <Circle x={pivotPosition.x} y={pivotPosition.y} radius={5} fill="black" />
+      <Line
+        points={[
+          pivotPosition.x,
+          pivotPosition.y,
+          displayBobPosition.x,
+          displayBobPosition.y,
+        ]}
+        strokeWidth={2}
+        stroke="black"
+      />
+      <Circle x={displayBobPosition.x} y={displayBobPosition.y} radius={mass} fill="black" />
     </Group>
   );
 };

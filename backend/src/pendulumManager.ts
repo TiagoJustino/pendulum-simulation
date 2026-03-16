@@ -8,8 +8,11 @@ import type { InitPendulumRequestDto } from "@pendulum-simulation/common";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+type SimulationState = "running" | "paused" | "stopped";
+
 export class PendulumManager {
   private instances: Record<string, ChildProcess> = {};
+  private state: SimulationState = "running";
 
   add(data: InitPendulumRequestDto): string {
     const { angle, length, mass, pivotPosition } = data;
@@ -22,7 +25,9 @@ export class PendulumManager {
     this.instances[id].stderr!.on("data", (msg: Buffer) => {
       console.log(`[${id}]: [${msg.toString().trim()}]`);
     });
-    this.instances[id].send({ command: "STOP" });
+    const initialCommand =
+      this.state === "running" ? "PLAY" : this.state === "paused" ? "PAUSE" : "STOP";
+    this.instances[id].send({ command: initialCommand });
     return id;
   }
 
@@ -38,18 +43,21 @@ export class PendulumManager {
   }
 
   pauseAll(): void {
+    this.state = "paused";
     for (const id of Object.keys(this.instances)) {
       this.instances[id]?.send({ command: "PAUSE" });
     }
   }
 
   stopAll(): void {
+    this.state = "stopped";
     for (const id of Object.keys(this.instances)) {
       this.instances[id]?.send({ command: "STOP" });
     }
   }
 
   playAll(): void {
+    this.state = "running";
     for (const id of Object.keys(this.instances)) {
       this.instances[id]?.send({ command: "PLAY" });
     }
