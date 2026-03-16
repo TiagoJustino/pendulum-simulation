@@ -12,6 +12,8 @@ import type {
 import { uuidv7 } from "uuidv7";
 import { fork } from "child_process";
 import type { ChildProcess, Serializable } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
 async function getFirstMessage(child: ChildProcess): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -34,10 +36,8 @@ async function getFirstMessage(child: ChildProcess): Promise<string> {
   });
 }
 
-const script = process.env.npm_lifecycle_script?.split(" ").pop();
-const scriptParts = script?.split("/");
-scriptParts?.pop();
-const scriptDir = scriptParts?.join("/");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export function createApp() {
   const app: Application = express();
@@ -104,7 +104,7 @@ export function createApp() {
       const { x, y } = pivotPosition;
       const id = uuidv7();
       const args = [id, `${angle}`, `${length}`, `${x}`, `${y}`];
-      instances[id] = fork([".", scriptDir, "pendulumProc"].join("/"), args);
+      instances[id] = fork(path.join(__dirname, "pendulumProc"), args);
       res.status(200).json({ id });
     },
   );
