@@ -5,6 +5,7 @@ enum Topic {
   PENDULUM_POSITION = "pendulum/+/position",
   COMMAND = "pendulum/command",
   STATUS = "pendulum/+/status",
+  COUNTDOWN = "pendulum/countdown",
   PENDULUM = "pendulum",
   POSITION = "position",
   STATUS_SEGMENT = "status",
@@ -106,5 +107,9 @@ export class PendulumMqttClient {
       `${Topic.PENDULUM}/${this.id}/${Topic.STATUS_SEGMENT}`,
       { status },
     );
+  }
+
+  async publishCountdown(seconds: number): Promise<void> {
+    return await this.publish(Topic.COUNTDOWN, { seconds });
   }
 }

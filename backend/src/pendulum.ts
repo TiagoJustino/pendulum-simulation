@@ -161,6 +161,7 @@ export class Pendulum {
     if (this.collisionRole !== "coordinator") return;
     if (this.pendingAcks.size === 0) {
       clearTimeout(this.restartTimeoutTimer);
+      this.mqttClient?.publishCountdown(3);
       this.restartTimeoutTimer = setTimeout(() => this.doRestart(), 3000);
     }
   }

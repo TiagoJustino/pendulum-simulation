@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useMutation,
   type UseMutationResult,
   useQuery,
 } from "@tanstack/react-query";
+import { useMqttSubscribe } from "@artcom/mqtt-topping-react";
 import type {
   ClearResponseDto,
   InitPendulumRequestDto,
@@ -82,6 +83,28 @@ export const useClear = () => {
   }, [mutation.mutate]);
 
   return mutation;
+};
+
+export const useCollisionCountdown = () => {
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useMqttSubscribe("pendulum/countdown", ({ seconds }: { seconds: number }) => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setCountdown(seconds);
+    intervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(intervalRef.current!);
+          intervalRef.current = null;
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  });
+
+  return countdown;
 };
 
 export const usePause = () =>

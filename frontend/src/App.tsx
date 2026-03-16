@@ -2,16 +2,17 @@ import { useState } from "react";
 import ResponsiveStage from "./ResponsiveStage.tsx";
 import { MqttProvider } from "@artcom/mqtt-topping-react";
 import Toolbox from "./Toolbox.tsx";
-import { usePause, useStop, usePlay } from "./hooks/usePendulum.ts";
+import { usePause, useStop, usePlay, useCollisionCountdown } from "./hooks/usePendulum.ts";
 
 const MIN_INSTANCES = 1;
 const MAX_INSTANCES = 10;
 
-function App() {
+function AppInner() {
   const [numPendulums, setNumPendulums] = useState(5);
   const { mutate: pause } = usePause();
   const { mutate: stop } = useStop();
   const { mutate: play } = usePlay();
+  const countdown = useCollisionCountdown();
 
   return (
     <div
@@ -39,13 +40,20 @@ function App() {
             onPause={() => pause()}
             onStop={() => stop()}
             onPlay={() => play()}
+            countdown={countdown}
           />
         </div>
       </section>
-      <MqttProvider uri="ws://127.0.0.1:3002/mqtt">
-        <ResponsiveStage numPendulums={numPendulums} />
-      </MqttProvider>
+      <ResponsiveStage numPendulums={numPendulums} />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <MqttProvider uri="ws://127.0.0.1:3002/mqtt">
+      <AppInner />
+    </MqttProvider>
   );
 }
 

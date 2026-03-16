@@ -13,9 +13,10 @@ interface Props {
   onPause: () => void;
   onStop: () => void;
   onPlay: () => void;
+  countdown?: number | null;
 }
 
-const Toolbox = ({ onDecrease, onIncrease, onPause, onStop, onPlay }: Props) => (
+const Toolbox = ({ onDecrease, onIncrease, onPause, onStop, onPlay, countdown }: Props) => (
   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
     <MinusCircle size={48} onClick={onDecrease} style={{ cursor: "pointer" }} />
     <PlusCircle size={48} onClick={onIncrease} style={{ cursor: "pointer" }} />
@@ -25,6 +26,11 @@ const Toolbox = ({ onDecrease, onIncrease, onPause, onStop, onPlay }: Props) => 
     <PauseCircle size={48} onClick={onPause} style={{ cursor: "pointer" }} />
     <StopCircle size={48} onClick={onStop} style={{ cursor: "pointer" }} />
     <PlayCircle size={48} onClick={onPlay} style={{ cursor: "pointer" }} />
+    {countdown != null && (
+      <span style={{ fontSize: "24px", fontWeight: "bold", minWidth: "24px" }}>
+        {countdown}
+      </span>
+    )}
   </div>
 );
 
