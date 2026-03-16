@@ -24,7 +24,6 @@ export const useInitPendulum = (
     InitPendulumRequestDto
   > = useMutation({
     mutationFn: async (dto: InitPendulumRequestDto) => {
-      console.log("useInitPendulum", JSON.stringify(dto));
       const res = await fetch(`${API_BASE}/add-pendulum`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,10 +89,12 @@ export const useCollisionCountdown = () => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useMqttSubscribe("pendulum/countdown", ({ seconds }: { seconds: number }) => {
+    console.log(`[countdown] received pendulum/countdown: ${seconds}s`);
     if (intervalRef.current) clearInterval(intervalRef.current);
     setCountdown(seconds);
     intervalRef.current = setInterval(() => {
       setCountdown((prev) => {
+        console.log(`[countdown] tick: ${prev} -> ${prev !== null && prev > 1 ? prev - 1 : null}`);
         if (prev === null || prev <= 1) {
           clearInterval(intervalRef.current!);
           intervalRef.current = null;
@@ -104,7 +105,15 @@ export const useCollisionCountdown = () => {
     }, 1000);
   });
 
-  return countdown;
+  const clearCountdown = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setCountdown(null);
+  };
+
+  return { countdown, clearCountdown };
 };
 
 export const usePause = () =>

@@ -1,4 +1,4 @@
-import { Stage } from "react-konva";
+import { Layer, Stage } from "react-konva";
 import { useClear } from "./hooks/usePendulum.ts";
 import { useState, useEffect, useRef } from "react";
 import Pendulum from "./Pendulum.tsx";
@@ -43,13 +43,15 @@ const ResponsiveStage = ({ numPendulums }: Props) => {
       }}
     >
       <Stage width={dimensions.width} height={dimensions.height}>
-        {Array.from({ length: numPendulums }, (_, i) => (
-          <Pendulum
-            key={i}
-            stageWidth={dimensions.width}
-            enabled={clearResponse?.success ?? false}
-          />
-        ))}
+        <Layer>
+          {Array.from({ length: numPendulums }, (_, i) => (
+            <Pendulum
+              key={i}
+              stageWidth={dimensions.width}
+              enabled={clearResponse?.success ?? false}
+            />
+          ))}
+        </Layer>
       </Stage>
     </div>
   );

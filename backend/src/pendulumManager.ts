@@ -22,6 +22,7 @@ export class PendulumManager {
     this.instances[id].stderr!.on("data", (msg: Buffer) => {
       console.log(`[${id}]: [${msg.toString().trim()}]`);
     });
+    this.instances[id].send({ command: "STOP" });
     return id;
   }
 

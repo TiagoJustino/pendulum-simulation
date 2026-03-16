@@ -1,7 +1,6 @@
 import { pendulumFactory } from "./pendulumFactory.js";
 import mqtt from "mqtt";
 import { PendulumMqttClient } from "./mqttClient.js";
-import { consoleErrorWithFlush } from "./consoleErrorWithFlush.js";
 
 if (process.argv.length < 6) {
   console.error(
@@ -33,15 +32,13 @@ process.on("message", async (msg: any) => {
       console.log(JSON.stringify(pendulum.getRelativeBobPosition()));
       break;
     case "UPDATE":
-      await consoleErrorWithFlush(`${msg.command} ${msg.data}`);
       pendulum.update(msg.data);
       break;
     case "PAUSE":
       pendulum.pause();
       break;
     case "STOP":
-      pendulum.pause();
-      pendulum.init();
+      pendulum.stop();
       break;
     case "PLAY":
       pendulum.start();

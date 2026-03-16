@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ResponsiveStage from "./ResponsiveStage.tsx";
 import { MqttProvider } from "@artcom/mqtt-topping-react";
 import Toolbox from "./Toolbox.tsx";
@@ -7,12 +7,30 @@ import { usePause, useStop, usePlay, useCollisionCountdown } from "./hooks/usePe
 const MIN_INSTANCES = 1;
 const MAX_INSTANCES = 10;
 
+type SimulationState = "running" | "paused" | "stopped" | "restarting";
+
 function AppInner() {
   const [numPendulums, setNumPendulums] = useState(5);
+  const [simulationState, setSimulationState] = useState<SimulationState>("running");
   const { mutate: pause } = usePause();
   const { mutate: stop } = useStop();
   const { mutate: play } = usePlay();
-  const countdown = useCollisionCountdown();
+  const { countdown, clearCountdown } = useCollisionCountdown();
+
+  const setState = (next: SimulationState) => {
+    console.log(`[state] ${simulationState} -> ${next}`);
+    setSimulationState(next);
+  };
+
+  useEffect(() => { play(); }, []);
+
+  useEffect(() => {
+    if (countdown !== null) {
+      setState("restarting");
+    } else if (simulationState === "restarting") {
+      setState("running");
+    }
+  }, [countdown]);
 
   return (
     <div
@@ -31,15 +49,31 @@ function AppInner() {
             </p>
           </div>
           <Toolbox
-            onDecrease={() =>
-              setNumPendulums((n) => Math.max(MIN_INSTANCES, n - 1))
-            }
-            onIncrease={() =>
-              setNumPendulums((n) => Math.min(MAX_INSTANCES, n + 1))
-            }
-            onPause={() => pause()}
-            onStop={() => stop()}
-            onPlay={() => play()}
+            simulationState={simulationState}
+            onDecrease={() => {
+              console.log("[button] remove instance");
+              setNumPendulums((n) => Math.max(MIN_INSTANCES, n - 1));
+            }}
+            onIncrease={() => {
+              console.log("[button] add instance");
+              setNumPendulums((n) => Math.min(MAX_INSTANCES, n + 1));
+            }}
+            onPause={() => {
+              console.log("[button] pause");
+              pause();
+              setState("paused");
+            }}
+            onStop={() => {
+              console.log("[button] stop");
+              stop();
+              clearCountdown();
+              setState("stopped");
+            }}
+            onPlay={() => {
+              console.log("[button] play");
+              play();
+              setState("running");
+            }}
             countdown={countdown}
           />
         </div>

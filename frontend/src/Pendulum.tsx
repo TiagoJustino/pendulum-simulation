@@ -1,4 +1,4 @@
-import { Circle, Layer, Line } from "react-konva";
+import { Circle, Group, Line } from "react-konva";
 import type { AbsolutePosition, Point } from "@pendulum-simulation/common";
 import { useMqttSubscribe } from "@artcom/mqtt-topping-react";
 import { useEffect, useState } from "react";
@@ -39,7 +39,7 @@ const Pendulum = ({ stageWidth, enabled }: Props) => {
     if (pivotPosition.x > stageWidth - 25 || pivotPosition.x < 25) {
       setPivotPosition({ x: randomInt(25, stageWidth - 25), y: 25 });
     }
-  }, [pivotPosition, stageWidth]);
+  }, [stageWidth]);
 
   useEffect(() => {
     if (pendulum?.id && pivotPosition.x >= 25) {
@@ -78,7 +78,7 @@ const Pendulum = ({ stageWidth, enabled }: Props) => {
   }, [pivotPosition, bobPosition]);
 
   return (
-    <Layer>
+    <Group>
       {shouldRender && (
         <>
           <Circle
@@ -105,7 +105,7 @@ const Pendulum = ({ stageWidth, enabled }: Props) => {
           />
         </>
       )}
-    </Layer>
+    </Group>
   );
 };
 

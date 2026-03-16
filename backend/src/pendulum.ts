@@ -4,7 +4,6 @@ import type {
   Point,
 } from "@pendulum-simulation/common";
 import type { PendulumMqttClient } from "./mqttClient.js";
-import { consoleErrorWithFlush } from "./consoleErrorWithFlush.js";
 
 /*
 ## References:
@@ -195,8 +194,6 @@ export class Pendulum {
     if (this.collisionRole !== "none") return;
 
     if (this.checkColision(position)) {
-      await consoleErrorWithFlush(`onPosition: got collision`);
-
       // Snapshot active peers BEFORE pausing (they'll stop publishing)
       this.peersAtCollision = this.getActivePeers();
       this.pause();
@@ -210,8 +207,6 @@ export class Pendulum {
   }
 
   async onCommand(command: string, fromId: string): Promise<void> {
-    await consoleErrorWithFlush(`onCommand: [${command}] from [${fromId}]`);
-
     if (command === Command.STOP) {
       this.collisionDetectors.add(fromId);
 
@@ -256,6 +251,12 @@ export class Pendulum {
       clearInterval(this.intervalId);
       this.intervalId = undefined;
     }
+  }
+
+  stop() {
+    this.resetCollisionState();
+    this.pause();
+    this.init();
   }
 
   async dispose(): Promise<void> {
