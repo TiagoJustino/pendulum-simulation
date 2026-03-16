@@ -18,5 +18,6 @@ export const pendulumFactory: PendulumFactory = (
   const pendulum = new Pendulum(angle, length, pivotPosition, client);
   client?.setOnPosition(pendulum.onPosition.bind(pendulum));
   client?.setOnCommand(pendulum.onCommand.bind(pendulum));
+  client?.setOnStatus(pendulum.onStatus.bind(pendulum));
   return pendulum;
 };

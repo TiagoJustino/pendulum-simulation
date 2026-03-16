@@ -26,36 +26,46 @@ export function createApp() {
     res.status(200).json({ id });
   });
 
-  app.put("/pendulum/:id", async (req: Request<{ id: string }>, res: Response) => {
-    const result = validatePendulumInput(req.body);
-    if ("error" in result) {
-      res.status(400).json({ error: result.error });
-      return;
-    }
-    manager.update(req.params.id, result.data);
-    res.status(200).json({ success: true });
-  });
+  app.put(
+    "/pendulum/:id",
+    async (req: Request<{ id: string }>, res: Response) => {
+      const result = validatePendulumInput(req.body);
+      if ("error" in result) {
+        res.status(400).json({ error: result.error });
+        return;
+      }
+      manager.update(req.params.id, result.data);
+      res.status(200).json({ success: true });
+    },
+  );
 
   app.delete("/pendulum", async (_req: Request, res: Response) => {
     manager.shutdownAll();
     res.status(200).json({ success: true });
   });
 
-  app.delete("/pendulum/:id", async (req: Request<{ id: string }>, res: Response) => {
-    manager.shutdown(req.params.id);
-    res.status(200).json({ success: true });
-  });
+  app.delete(
+    "/pendulum/:id",
+    async (req: Request<{ id: string }>, res: Response) => {
+      manager.shutdown(req.params.id);
+      res.status(200).json({ success: true });
+    },
+  );
 
   // @Deprecated in favor of mqtt
-  app.get("/position/:id", async (req: Request<{ id: string }>, res: Response) => {
-    try {
-      const message = await manager.getPosition(req.params.id);
-      res.status(200).json(JSON.parse(message));
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : "Failed to get message";
-      res.status(500).json({ error: msg });
-    }
-  });
+  app.get(
+    "/position/:id",
+    async (req: Request<{ id: string }>, res: Response) => {
+      try {
+        const message = await manager.getPosition(req.params.id);
+        res.status(200).json(JSON.parse(message));
+      } catch (error) {
+        const msg =
+          error instanceof Error ? error.message : "Failed to get message";
+        res.status(500).json({ error: msg });
+      }
+    },
+  );
 
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     console.error(err.stack);

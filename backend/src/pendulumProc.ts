@@ -1,6 +1,7 @@
 import { pendulumFactory } from "./pendulumFactory.js";
 import mqtt from "mqtt";
 import { PendulumMqttClient } from "./mqttClient.js";
+import { consoleErrorWithFlush } from "./consoleErrorWithFlush.js";
 
 if (process.argv.length < 5) {
   console.error(
@@ -29,18 +30,18 @@ const pendulum = pendulumFactory(
   pendulumMqttClient,
 );
 
-process.on("message", (msg: any) => {
+process.on("message", async (msg: any) => {
   switch (msg.command) {
     case "POSITION":
       console.log(JSON.stringify(pendulum.getRelativeBobPosition()));
       break;
     case "UPDATE":
-      process.stderr.write(`${msg.command} ${msg.data}\n`);
+      await consoleErrorWithFlush(`${msg.command} ${msg.data}`);
       pendulum.update(msg.data);
       break;
     case "SHUTDOWN":
       console.log("Worker received shutdown command. Cleaning up...");
-      pendulum.dispose();
+      await pendulum.dispose();
       process.exit(0);
   }
 });

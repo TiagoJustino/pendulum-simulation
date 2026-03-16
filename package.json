@@ -6,14 +6,17 @@
   "scripts": {
     "backend:build": "npm run build -w backend",
     "backend:dev": "npm run dev -w backend",
+    "backend:format": "npm run format -w backend",
     "backend:start": "npm start -w backend",
     "backend:test": "npm test -w backend",
     "build": "run-s -l backend:build frontend:build",
     "dev": "run-p -l mqtt:start backend:dev frontend:dev",
+    "format": "run-s -l backend:format frontend:format",
     "start": "run-p -l mqtt:start backend:start frontend:start",
     "test": "run-s -l backend:test",
     "frontend:build": "npm run build -w frontend",
     "frontend:dev": "npm run dev -w frontend",
+    "frontend:format": "npm run format -w frontend",
     "frontend:start": "npm start -w frontend",
     "mqtt:start": "aedes start --ws-port 3002 --protos tcp ws",
     "mqtt:log": "mqtt sub -t '#' -h localhost -v"

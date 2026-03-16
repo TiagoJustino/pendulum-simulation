@@ -4,6 +4,7 @@ import type {
   Point,
 } from "@pendulum-simulation/common";
 import type { PendulumMqttClient } from "./mqttClient.js";
+import { consoleErrorWithFlush } from "./consoleErrorWithFlush.js";
 
 /*
 ## References:
@@ -30,6 +31,15 @@ enum Command {
 }
 
 const GRAVITY = 2;
+const PEER_TTL_MS = 150;
+// Window to collect all STOP messages before electing a coordinator
+const ELECTION_WINDOW_MS = 200;
+// How long coordinator waits for all ACKs before forcing restart
+const COORDINATOR_TIMEOUT_MS = 8000;
+// How long a follower waits for RESTART before self-restarting
+const FOLLOWER_TIMEOUT_MS = 10000;
+
+type CollisionRole = "none" | "detector" | "coordinator" | "follower";
 
 export class Pendulum {
   private bobPosition: Point | undefined;
@@ -37,6 +47,22 @@ export class Pendulum {
   private angle: number | undefined;
   private angleVelocity: number | undefined;
   private intervalId: NodeJS.Timeout | undefined;
+
+  // Presence tracking: peerId -> lastSeen timestamp
+  private knownPeers = new Map<string, number>();
+
+  // Collision coordination state
+  private collisionRole: CollisionRole = "none";
+  // IDs that sent STOP in this collision round (detected collision themselves)
+  private collisionDetectors = new Set<string>();
+  // Snapshot of peers active at the moment collision was first detected
+  private peersAtCollision = new Set<string>();
+  // ACKs received during this collision round (accumulated before election too)
+  private receivedAcks = new Set<string>();
+  // Peers the coordinator is still waiting on
+  private pendingAcks = new Set<string>();
+  private electionTimer: NodeJS.Timeout | undefined;
+  private restartTimeoutTimer: NodeJS.Timeout | undefined;
 
   // angle is in degrees, length is in pixels
   constructor(
@@ -63,7 +89,7 @@ export class Pendulum {
     if (this.intervalId) {
       return;
     }
-    // update and publish the pendulum position every 15ms
+    // update and publish the pendulum position every 30ms
     this.intervalId = setInterval(async () => {
       this.nextPosition();
       await this.mqttPublishPosition();
@@ -86,22 +112,141 @@ export class Pendulum {
     return dist <= 50;
   }
 
-  // TODO: Consider pivotPosition
-  async onPosition(position: AbsolutePosition): Promise<void> {
-    if (this.checkColision(position)) {
-      await this.mqttClient!.publishCommand(Command.STOP);
+  private getActivePeers(): Set<string> {
+    const now = Date.now();
+    const active = new Set<string>();
+    for (const [id, ts] of this.knownPeers) {
+      if (now - ts <= PEER_TTL_MS) active.add(id);
+    }
+    return active;
+  }
+
+  private startElectionTimer() {
+    clearTimeout(this.electionTimer);
+    this.electionTimer = setTimeout(
+      () => this.runElection(),
+      ELECTION_WINDOW_MS,
+    );
+  }
+
+  private runElection() {
+    if (this.collisionRole !== "detector") return;
+
+    const myId = this.mqttClient!.id;
+    const minId = [...this.collisionDetectors].sort()[0];
+
+    if (minId === myId) {
+      this.collisionRole = "coordinator";
+      this.pendingAcks = new Set(this.peersAtCollision);
+      // Remove ACKs already received during the election window
+      for (const id of this.receivedAcks) {
+        this.pendingAcks.delete(id);
+      }
+      this.restartTimeoutTimer = setTimeout(
+        () => this.doRestart(),
+        COORDINATOR_TIMEOUT_MS,
+      );
+      this.checkAllAcks();
+    } else {
+      // Lost election — wait for coordinator to send RESTART
+      this.collisionRole = "follower";
+      this.restartTimeoutTimer = setTimeout(
+        () => this.doRestart(),
+        FOLLOWER_TIMEOUT_MS,
+      );
     }
   }
 
-  async onCommand(command: string): Promise<void> {
-    if (command === Command.STOP) {
+  private checkAllAcks() {
+    if (this.collisionRole !== "coordinator") return;
+    if (this.pendingAcks.size === 0) {
+      clearTimeout(this.restartTimeoutTimer);
+      this.restartTimeoutTimer = setTimeout(() => this.doRestart(), 3000);
+    }
+  }
+
+  private async doRestart() {
+    const wasCoordinator = this.collisionRole === "coordinator";
+    this.resetCollisionState();
+    if (wasCoordinator) {
+      await this.mqttClient?.publishCommand(Command.RESTART);
+    }
+    this.init();
+    this.start();
+  }
+
+  private resetCollisionState() {
+    this.collisionRole = "none";
+    this.collisionDetectors.clear();
+    this.peersAtCollision.clear();
+    this.receivedAcks.clear();
+    this.pendingAcks.clear();
+    clearTimeout(this.electionTimer);
+    clearTimeout(this.restartTimeoutTimer);
+    this.electionTimer = undefined;
+    this.restartTimeoutTimer = undefined;
+  }
+
+  // TODO: Consider pivotPosition
+  async onPosition(id: string, position: AbsolutePosition): Promise<void> {
+    this.knownPeers.set(id, Date.now());
+
+    if (this.collisionRole !== "none") return;
+
+    if (this.checkColision(position)) {
+      await consoleErrorWithFlush(`onPosition: got collision`);
+
+      // Snapshot active peers BEFORE pausing (they'll stop publishing)
+      this.peersAtCollision = this.getActivePeers();
       this.pause();
-      setTimeout(() => {
-        this.mqttClient?.publishCommand(Command.RESTART);
-      }, 5000);
+      this.collisionRole = "detector";
+      this.collisionDetectors.add(this.mqttClient!.id);
+
+      await this.mqttClient!.publishCommand(Command.STOP);
+      await this.mqttClient!.publishStatus("ACK");
+      this.startElectionTimer();
+    }
+  }
+
+  async onCommand(command: string, fromId: string): Promise<void> {
+    await consoleErrorWithFlush(`onCommand: [${command}] from [${fromId}]`);
+
+    if (command === Command.STOP) {
+      this.collisionDetectors.add(fromId);
+
+      if (this.collisionRole === "none") {
+        // Received STOP without detecting collision — become follower
+        if (!this.peersAtCollision.size) {
+          this.peersAtCollision = this.getActivePeers();
+        }
+        this.pause();
+        this.collisionRole = "follower";
+        await this.mqttClient!.publishStatus("ACK");
+        this.restartTimeoutTimer = setTimeout(
+          () => this.doRestart(),
+          FOLLOWER_TIMEOUT_MS,
+        );
+      } else if (this.collisionRole === "detector") {
+        // Another detector joined — reset election window
+        this.startElectionTimer();
+      }
     } else if (command === Command.RESTART) {
-      this.init();
-      this.start();
+      if (this.collisionRole !== "coordinator") {
+        this.resetCollisionState();
+        this.init();
+        this.start();
+      }
+    }
+  }
+
+  async onStatus(id: string, status: string): Promise<void> {
+    if (status !== "ACK") return;
+
+    this.receivedAcks.add(id);
+
+    if (this.collisionRole === "coordinator") {
+      this.pendingAcks.delete(id);
+      this.checkAllAcks();
     }
   }
 
@@ -113,11 +258,13 @@ export class Pendulum {
   }
 
   async dispose(): Promise<void> {
+    this.resetCollisionState();
     this.pause();
     await this.mqttDisconnect();
   }
 
   update(data: InitPendulumRequestDto) {
+    this.resetCollisionState();
     this.pause();
     this.initialAngle = data.angle;
     this.length = data.length;

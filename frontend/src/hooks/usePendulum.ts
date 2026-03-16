@@ -45,7 +45,7 @@ export const useInitPendulum = (
 export const useUpdatePendulum = (id: string) =>
   useMutation({
     mutationFn: async (dto: InitPendulumRequestDto) => {
-      console.log('useUpdatePendulum', JSON.stringify(dto));
+      console.log("useUpdatePendulum", JSON.stringify(dto));
       const res = await fetch(`${API_BASE}/pendulum/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },

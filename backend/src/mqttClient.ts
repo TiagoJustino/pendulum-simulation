@@ -4,20 +4,26 @@ import type { AbsolutePosition } from "@pendulum-simulation/common";
 enum Topic {
   PENDULUM_POSITION = "pendulum/+/position",
   COMMAND = "pendulum/command",
+  STATUS = "pendulum/+/status",
   PENDULUM = "pendulum",
   POSITION = "position",
+  STATUS_SEGMENT = "status",
 }
 
 export class PendulumMqttClient {
   constructor(
     public id: string,
     private mqttClient: mqtt.MqttClient | null = null,
-    private onPosition: (position: AbsolutePosition) => void = () => {},
-    private onCommand: (command: string) => void = () => {},
+    private onPosition: (
+      id: string,
+      position: AbsolutePosition,
+    ) => void = () => {},
+    private onCommand: (command: string, fromId: string) => void = () => {},
+    private onStatus: (id: string, status: string) => void = () => {},
   ) {
     if (mqttClient) {
       this.mqttClient!.subscribe(
-        [Topic.PENDULUM_POSITION, Topic.COMMAND],
+        [Topic.PENDULUM_POSITION, Topic.COMMAND, Topic.STATUS],
         (err) => {
           if (!err) {
             console.log(`Subscribed to topic`);
@@ -27,28 +33,44 @@ export class PendulumMqttClient {
         },
       );
       this.mqttClient!.on("message", (topic, message) => {
-        switch (topic) {
-          case Topic.COMMAND:
-            if (this.onCommand) {
-              this.onCommand(JSON.parse(message.toString()).command);
+        const [, peerId, segment] = topic.split("/");
+
+        if (topic === Topic.COMMAND) {
+          if (this.onCommand) {
+            const data = JSON.parse(message.toString());
+            if (data.id !== this.id) {
+              this.onCommand(data.command, data.id);
             }
-            break;
-          default:
-            const [, id] = topic.split("/");
-            if (this.onPosition && id !== this.id) {
-              this.onPosition(JSON.parse(message.toString()));
-            }
+          }
+          return;
+        }
+
+        if (segment === Topic.STATUS_SEGMENT) {
+          if (this.onStatus && peerId !== this.id) {
+            const data = JSON.parse(message.toString());
+            this.onStatus(peerId!, data.status);
+          }
+          return;
+        }
+
+        // position
+        if (this.onPosition && peerId !== this.id) {
+          this.onPosition(peerId!, JSON.parse(message.toString()));
         }
       });
     }
   }
 
-  setOnPosition(onPosition: (position: AbsolutePosition) => void) {
+  setOnPosition(onPosition: (id: string, position: AbsolutePosition) => void) {
     this.onPosition = onPosition;
   }
 
-  setOnCommand(onCommand: (command: string) => void) {
+  setOnCommand(onCommand: (command: string, fromId: string) => void) {
     this.onCommand = onCommand;
+  }
+
+  setOnStatus(onStatus: (id: string, status: string) => void) {
+    this.onStatus = onStatus;
   }
 
   async shutdown(): Promise<void> {
@@ -76,6 +98,13 @@ export class PendulumMqttClient {
   }
 
   async publishCommand(command: string): Promise<void> {
-    return await this.publish(Topic.COMMAND, { command });
+    return await this.publish(Topic.COMMAND, { id: this.id, command });
+  }
+
+  async publishStatus(status: string): Promise<void> {
+    return await this.publish(
+      `${Topic.PENDULUM}/${this.id}/${Topic.STATUS_SEGMENT}`,
+      { status },
+    );
   }
 }

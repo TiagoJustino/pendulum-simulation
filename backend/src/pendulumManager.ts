@@ -16,7 +16,12 @@ export class PendulumManager {
     const { x, y } = pivotPosition;
     const id = uuidv7();
     const args = [id, `${angle}`, `${length}`, `${x}`, `${y}`];
-    this.instances[id] = fork(path.join(__dirname, "pendulumProc"), args);
+    this.instances[id] = fork(path.join(__dirname, "pendulumProc"), args, {
+      silent: true,
+    });
+    this.instances[id].stderr!.on("data", (msg: Buffer) => {
+      console.log(`[${id}]: [${msg.toString().trim()}]`);
+    });
     return id;
   }
 

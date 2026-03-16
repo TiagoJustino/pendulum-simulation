@@ -5,8 +5,9 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/server.ts",
-    "test": "vitest run",
-    "start": "node dist/server.js"
+    "format": "prettier --write src",
+    "start": "node dist/server.js",
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",

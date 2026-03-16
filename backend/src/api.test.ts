@@ -6,6 +6,7 @@ vi.mock("child_process", () => ({
   fork: vi.fn(() => {
     const child = new EventEmitter();
     (child as any).send = vi.fn();
+    (child as any).stderr = new EventEmitter();
     return child;
   }),
 }));
@@ -22,7 +23,11 @@ afterEach(async () => {
   await request(app).delete("/pendulum");
 });
 
-const validPayload = { angle: 45, length: 100, pivotPosition: { x: 200, y: 50 } };
+const validPayload = {
+  angle: 45,
+  length: 100,
+  pivotPosition: { x: 200, y: 50 },
+};
 
 describe("POST /add-pendulum", () => {
   it("returns an id on valid input", async () => {
@@ -87,9 +92,7 @@ describe("POST /add-pendulum", () => {
   });
 
   it("returns 400 on empty body", async () => {
-    const res = await request(app)
-      .post("/add-pendulum")
-      .send({});
+    const res = await request(app).post("/add-pendulum").send({});
 
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty("error");
@@ -98,7 +101,9 @@ describe("POST /add-pendulum", () => {
 
 describe("DELETE /pendulum/:id", () => {
   it("returns success after creating a pendulum", async () => {
-    const createRes = await request(app).post("/add-pendulum").send(validPayload);
+    const createRes = await request(app)
+      .post("/add-pendulum")
+      .send(validPayload);
 
     const res = await request(app).delete(`/pendulum/${createRes.body.id}`);
 
@@ -145,7 +150,9 @@ describe("DELETE /pendulum", () => {
 
 describe("PUT /pendulum/:id", () => {
   it("returns success when updating an existing pendulum", async () => {
-    const createRes = await request(app).post("/add-pendulum").send(validPayload);
+    const createRes = await request(app)
+      .post("/add-pendulum")
+      .send(validPayload);
 
     const res = await request(app)
       .put(`/pendulum/${createRes.body.id}`)
@@ -165,7 +172,9 @@ describe("PUT /pendulum/:id", () => {
   });
 
   it("returns 400 on invalid body", async () => {
-    const createRes = await request(app).post("/add-pendulum").send(validPayload);
+    const createRes = await request(app)
+      .post("/add-pendulum")
+      .send(validPayload);
 
     const res = await request(app)
       .put(`/pendulum/${createRes.body.id}`)

@@ -1,4 +1,11 @@
-import { MinusCircle, PlusCircle, Settings, PauseCircle, StopCircle, PlayCircle } from "react-feather";
+import {
+  MinusCircle,
+  PlusCircle,
+  Settings,
+  PauseCircle,
+  StopCircle,
+  PlayCircle,
+} from "react-feather";
 
 interface Props {
   onDecrease: () => void;
