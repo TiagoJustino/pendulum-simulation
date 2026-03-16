@@ -2,7 +2,11 @@ import { Circle, Layer, Line } from "react-konva";
 import type { AbsolutePosition, Point } from "@pendulum-simulation/common";
 import { useMqttSubscribe } from "@artcom/mqtt-topping-react";
 import { useEffect, useState } from "react";
-import { useDeletePendulum, useInitPendulum, useUpdatePendulum } from "./hooks/usePendulum.ts";
+import {
+  useDeletePendulum,
+  useInitPendulum,
+  useUpdatePendulum,
+} from "./hooks/usePendulum.ts";
 
 function randomInt(min: number, max: number) {
   const minCeiled = Math.ceil(min);
@@ -19,7 +23,10 @@ const Pendulum = ({ stageWidth, enabled }: Props) => {
   const [bobPosition, setBobPosition] = useState<Point>({ x: 0, y: 0 });
   const [angle] = useState(() => randomInt(0, 89));
   const [length] = useState(() => randomInt(100, 500));
-  const [pivotPosition, setPivotPosition] = useState<Point>(() => {return { x: randomInt(25, stageWidth - 25), y: 25 };});
+  const [shouldRender, setShouldRender] = useState(false);
+  const [pivotPosition, setPivotPosition] = useState<Point>(() => {
+    return { x: randomInt(25, stageWidth - 25), y: 25 };
+  });
   const { data: pendulum } = useInitPendulum(
     { angle, length, pivotPosition },
     pivotPosition && enabled,
@@ -56,30 +63,46 @@ const Pendulum = ({ stageWidth, enabled }: Props) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!pivotPosition) {
+      return setShouldRender(false);
+    }
+    if (!bobPosition) {
+      return setShouldRender(false);
+    }
+    if (bobPosition.x == 0 && bobPosition.y == 0) {
+      return setShouldRender(false);
+    }
+    setShouldRender(true);
+  }, [pivotPosition, bobPosition]);
+
   return (
     <Layer>
-      {pivotPosition && (
-        <Circle
-          x={pivotPosition.x}
-          y={pivotPosition.y}
-          radius={5}
-          fill="black"
-        />
-      )}
-      {pivotPosition && bobPosition && (
-        <Line
-          points={[
-            pivotPosition.x,
-            pivotPosition.y,
-            bobPosition.x,
-            bobPosition.y,
-          ]}
-          strokeWidth={2}
-          stroke="black"
-        />
-      )}
-      {bobPosition && (
-        <Circle x={bobPosition.x} y={bobPosition.y} radius={25} fill="black" />
+      {shouldRender && (
+        <>
+          <Circle
+            x={pivotPosition.x}
+            y={pivotPosition.y}
+            radius={5}
+            fill="black"
+          />
+          <Line
+            points={[
+              pivotPosition.x,
+              pivotPosition.y,
+              bobPosition.x,
+              bobPosition.y,
+            ]}
+            strokeWidth={2}
+            stroke="black"
+          />
+          <Circle
+            x={bobPosition.x}
+            y={bobPosition.y}
+            radius={25}
+            fill="black"
+          />
+        </>
       )}
     </Layer>
   );

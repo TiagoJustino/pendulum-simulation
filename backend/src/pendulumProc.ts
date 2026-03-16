@@ -1,6 +1,6 @@
 import { pendulumFactory } from "./pendulumFactory.js";
 import mqtt from "mqtt";
-import { PendulumMqttClient } from "./MqttClient.js";
+import { PendulumMqttClient } from "./mqttClient.js";
 
 if (process.argv.length < 5) {
   console.error(

@@ -1,5 +1,5 @@
 import type mqtt from "mqtt";
-import type { AbsolutePosition, Point } from "@pendulum-simulation/common";
+import type { AbsolutePosition } from "@pendulum-simulation/common";
 
 enum Topic {
   PENDULUM_POSITION = "pendulum/+/position",
@@ -12,7 +12,7 @@ export class PendulumMqttClient {
   constructor(
     public id: string,
     private mqttClient: mqtt.MqttClient | null = null,
-    private onPosition: (position: Point) => void = () => {},
+    private onPosition: (position: AbsolutePosition) => void = () => {},
     private onCommand: (command: string) => void = () => {},
   ) {
     if (mqttClient) {
@@ -43,7 +43,7 @@ export class PendulumMqttClient {
     }
   }
 
-  setOnPosition(onPosition: (position: Point) => void) {
+  setOnPosition(onPosition: (position: AbsolutePosition) => void) {
     this.onPosition = onPosition;
   }
 

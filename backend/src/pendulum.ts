@@ -3,7 +3,7 @@ import type {
   InitPendulumRequestDto,
   Point,
 } from "@pendulum-simulation/common";
-import type { PendulumMqttClient } from "./MqttClient.js";
+import type { PendulumMqttClient } from "./mqttClient.js";
 
 /*
 ## References:

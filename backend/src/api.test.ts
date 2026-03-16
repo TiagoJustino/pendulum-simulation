@@ -10,7 +10,6 @@ vi.mock("child_process", () => ({
   }),
 }));
 
-// Import createApp after the mock is set up
 const { createApp } = await import("./createApp.js");
 
 let app: ReturnType<typeof createApp>;
@@ -23,11 +22,11 @@ afterEach(async () => {
   await request(app).delete("/pendulum");
 });
 
+const validPayload = { angle: 45, length: 100, pivotPosition: { x: 200, y: 50 } };
+
 describe("POST /add-pendulum", () => {
   it("returns an id on valid input", async () => {
-    const res = await request(app)
-      .post("/add-pendulum")
-      .send({ angle: 45, length: 100, pivotPosition: { x: 200, y: 50 } });
+    const res = await request(app).post("/add-pendulum").send(validPayload);
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("id");
@@ -36,20 +35,70 @@ describe("POST /add-pendulum", () => {
   });
 
   it("returns unique ids for multiple pendulums", async () => {
-    const payload = { angle: 30, length: 150, pivotPosition: { x: 100, y: 50 } };
-
-    const res1 = await request(app).post("/add-pendulum").send(payload);
-    const res2 = await request(app).post("/add-pendulum").send(payload);
+    const res1 = await request(app).post("/add-pendulum").send(validPayload);
+    const res2 = await request(app).post("/add-pendulum").send(validPayload);
 
     expect(res1.body.id).not.toBe(res2.body.id);
+  });
+
+  it("returns 400 when angle is missing", async () => {
+    const res = await request(app)
+      .post("/add-pendulum")
+      .send({ length: 100, pivotPosition: { x: 200, y: 50 } });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 when length is missing", async () => {
+    const res = await request(app)
+      .post("/add-pendulum")
+      .send({ angle: 45, pivotPosition: { x: 200, y: 50 } });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 when pivotPosition is missing", async () => {
+    const res = await request(app)
+      .post("/add-pendulum")
+      .send({ angle: 45, length: 100 });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 when length is negative", async () => {
+    const res = await request(app)
+      .post("/add-pendulum")
+      .send({ angle: 45, length: -10, pivotPosition: { x: 200, y: 50 } });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 when angle is not a number", async () => {
+    const res = await request(app)
+      .post("/add-pendulum")
+      .send({ angle: "foo", length: 100, pivotPosition: { x: 200, y: 50 } });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 on empty body", async () => {
+    const res = await request(app)
+      .post("/add-pendulum")
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
   });
 });
 
 describe("DELETE /pendulum/:id", () => {
   it("returns success after creating a pendulum", async () => {
-    const createRes = await request(app)
-      .post("/add-pendulum")
-      .send({ angle: 45, length: 100, pivotPosition: { x: 200, y: 50 } });
+    const createRes = await request(app).post("/add-pendulum").send(validPayload);
 
     const res = await request(app).delete(`/pendulum/${createRes.body.id}`);
 
@@ -67,9 +116,8 @@ describe("DELETE /pendulum/:id", () => {
 
 describe("DELETE /pendulum", () => {
   it("shuts down all pendulums", async () => {
-    const payload = { angle: 30, length: 150, pivotPosition: { x: 100, y: 50 } };
-    await request(app).post("/add-pendulum").send(payload);
-    await request(app).post("/add-pendulum").send(payload);
+    await request(app).post("/add-pendulum").send(validPayload);
+    await request(app).post("/add-pendulum").send(validPayload);
 
     const res = await request(app).delete("/pendulum");
 
@@ -85,11 +133,10 @@ describe("DELETE /pendulum", () => {
   });
 
   it("allows creating new pendulums after bulk delete", async () => {
-    const payload = { angle: 30, length: 150, pivotPosition: { x: 100, y: 50 } };
-    await request(app).post("/add-pendulum").send(payload);
+    await request(app).post("/add-pendulum").send(validPayload);
     await request(app).delete("/pendulum");
 
-    const res = await request(app).post("/add-pendulum").send(payload);
+    const res = await request(app).post("/add-pendulum").send(validPayload);
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("id");
@@ -98,9 +145,7 @@ describe("DELETE /pendulum", () => {
 
 describe("PUT /pendulum/:id", () => {
   it("returns success when updating an existing pendulum", async () => {
-    const createRes = await request(app)
-      .post("/add-pendulum")
-      .send({ angle: 45, length: 100, pivotPosition: { x: 200, y: 50 } });
+    const createRes = await request(app).post("/add-pendulum").send(validPayload);
 
     const res = await request(app)
       .put(`/pendulum/${createRes.body.id}`)
@@ -117,6 +162,17 @@ describe("PUT /pendulum/:id", () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ success: true });
+  });
+
+  it("returns 400 on invalid body", async () => {
+    const createRes = await request(app).post("/add-pendulum").send(validPayload);
+
+    const res = await request(app)
+      .put(`/pendulum/${createRes.body.id}`)
+      .send({ angle: "bad" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
   });
 });
 

@@ -7,7 +7,7 @@ describe("Pendulum", () => {
 
   describe("nextPosition()", () => {
     it("bob moves from initial position after one step", () => {
-      const pendulum = new Pendulum(30, 450, null);
+      const pendulum = new Pendulum(30, 450, { x: 0, y: 0 });
       const initial = { ...pendulum.getRelativeBobPosition() };
 
       pendulum.nextPosition();
@@ -17,7 +17,7 @@ describe("Pendulum", () => {
     });
 
     it("bob swings past middle position to the opposite side", () => {
-      const pendulum = new Pendulum(30, 450, null);
+      const pendulum = new Pendulum(30, 450, { x: 0, y: 0 });
       const initialX = pendulum.getRelativeBobPosition().x;
       expect(initialX).toBeGreaterThan(0);
 
@@ -36,7 +36,7 @@ describe("Pendulum", () => {
     });
 
     it("bob stays at rest when starting at angle 0", () => {
-      const pendulum = new Pendulum(0, 450, null);
+      const pendulum = new Pendulum(0, 450, { x: 0, y: 0 });
 
       pendulum.nextPosition();
       const afterFirst = { ...pendulum.getRelativeBobPosition() };

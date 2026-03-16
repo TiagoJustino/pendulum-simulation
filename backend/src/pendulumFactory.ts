@@ -1,5 +1,5 @@
 import { Pendulum } from "./pendulum.js";
-import type { PendulumMqttClient } from "./MqttClient.js";
+import type { PendulumMqttClient } from "./mqttClient.js";
 import type { Point } from "@pendulum-simulation/common";
 
 export type PendulumFactory = (
