@@ -84,6 +84,30 @@ export const useClear = () => {
   return mutation;
 };
 
+export const usePause = () =>
+  useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API_BASE}/pause`, { method: "POST" });
+      return await res.json();
+    },
+  });
+
+export const useStop = () =>
+  useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API_BASE}/stop`, { method: "POST" });
+      return await res.json();
+    },
+  });
+
+export const usePlay = () =>
+  useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API_BASE}/play`, { method: "POST" });
+      return await res.json();
+    },
+  });
+
 /**
  * @Deprecated - use useMqttSubscribe
  */

@@ -39,6 +39,16 @@ process.on("message", async (msg: any) => {
       await consoleErrorWithFlush(`${msg.command} ${msg.data}`);
       pendulum.update(msg.data);
       break;
+    case "PAUSE":
+      pendulum.pause();
+      break;
+    case "STOP":
+      pendulum.pause();
+      pendulum.init();
+      break;
+    case "PLAY":
+      pendulum.start();
+      break;
     case "SHUTDOWN":
       console.log("Worker received shutdown command. Cleaning up...");
       await pendulum.dispose();

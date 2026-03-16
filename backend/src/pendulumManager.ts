@@ -36,6 +36,24 @@ export class PendulumManager {
     }
   }
 
+  pauseAll(): void {
+    for (const id of Object.keys(this.instances)) {
+      this.instances[id]?.send({ command: "PAUSE" });
+    }
+  }
+
+  stopAll(): void {
+    for (const id of Object.keys(this.instances)) {
+      this.instances[id]?.send({ command: "STOP" });
+    }
+  }
+
+  playAll(): void {
+    for (const id of Object.keys(this.instances)) {
+      this.instances[id]?.send({ command: "PLAY" });
+    }
+  }
+
   update(id: string, data: InitPendulumRequestDto): void {
     this.instances[id]?.send({ command: "UPDATE", data });
   }

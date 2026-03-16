@@ -39,6 +39,21 @@ export function createApp() {
     },
   );
 
+  app.post("/pause", (_req: Request, res: Response) => {
+    manager.pauseAll();
+    res.status(200).json({ success: true });
+  });
+
+  app.post("/stop", (_req: Request, res: Response) => {
+    manager.stopAll();
+    res.status(200).json({ success: true });
+  });
+
+  app.post("/play", (_req: Request, res: Response) => {
+    manager.playAll();
+    res.status(200).json({ success: true });
+  });
+
   app.delete("/pendulum", async (_req: Request, res: Response) => {
     manager.shutdownAll();
     res.status(200).json({ success: true });
