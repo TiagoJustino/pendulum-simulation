@@ -6,12 +6,14 @@ export type Point = {
 export type InitPendulumRequestDto = {
   angle: number;
   length: number;
+  mass: number;
   pivotPosition: Point;
 };
 
 export type AbsolutePosition = {
   pivotPosition: Point;
   bobPosition: Point;
+  mass: number;
 };
 
 export type InitPendulumResponseDto = {

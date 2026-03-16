@@ -64,10 +64,11 @@ export class Pendulum {
   private electionTimer: NodeJS.Timeout | undefined;
   private restartTimeoutTimer: NodeJS.Timeout | undefined;
 
-  // angle is in degrees, length is in pixels
+  // angle is in degrees, length is in pixels, mass is in arbitrary units (= bob radius in px)
   constructor(
     private initialAngle: number,
     private length: number,
+    private mass: number,
     private pivotPosition: Point,
     private mqttClient: PendulumMqttClient | null = null,
   ) {
@@ -108,8 +109,7 @@ export class Pendulum {
     const xDist = Math.abs(bobAPosition.x - bobBPosition.x);
     const yDist = Math.abs(bobAPosition.y - bobBPosition.y);
     const dist = Math.sqrt(xDist ** 2 + yDist ** 2);
-    // TODO: consider variable sizes
-    return dist <= 50;
+    return dist <= this.mass + position.mass;
   }
 
   private getActivePeers(): Set<string> {
@@ -269,6 +269,7 @@ export class Pendulum {
     this.pause();
     this.initialAngle = data.angle;
     this.length = data.length;
+    this.mass = data.mass;
     this.pivotPosition.x = data.pivotPosition.x;
     this.pivotPosition.y = data.pivotPosition.y;
     this.init();
@@ -291,6 +292,7 @@ export class Pendulum {
       await this.mqttClient.publishPosition({
         pivotPosition: this.pivotPosition,
         bobPosition: this.getAbsoluteBobPosition(),
+        mass: this.mass,
       });
     }
   }

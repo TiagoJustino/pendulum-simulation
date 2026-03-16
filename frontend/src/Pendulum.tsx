@@ -23,12 +23,13 @@ const Pendulum = ({ stageWidth, enabled }: Props) => {
   const [bobPosition, setBobPosition] = useState<Point>({ x: 0, y: 0 });
   const [angle] = useState(() => randomInt(0, 89));
   const [length] = useState(() => randomInt(100, 500));
+  const [mass] = useState(() => randomInt(15, 40));
   const [shouldRender, setShouldRender] = useState(false);
   const [pivotPosition, setPivotPosition] = useState<Point>(() => {
     return { x: randomInt(25, stageWidth - 25), y: 25 };
   });
   const { data: pendulum } = useInitPendulum(
-    { angle, length, pivotPosition },
+    { angle, length, mass, pivotPosition },
     pivotPosition && enabled,
   );
   const { mutate: deletePendulum } = useDeletePendulum(pendulum?.id || "");
@@ -42,7 +43,7 @@ const Pendulum = ({ stageWidth, enabled }: Props) => {
 
   useEffect(() => {
     if (pendulum?.id && pivotPosition.x >= 25) {
-      updatePendulum({ angle, length, pivotPosition });
+      updatePendulum({ angle, length, mass, pivotPosition });
     }
   }, [pivotPosition]);
 
@@ -99,7 +100,7 @@ const Pendulum = ({ stageWidth, enabled }: Props) => {
           <Circle
             x={bobPosition.x}
             y={bobPosition.y}
-            radius={25}
+            radius={mass}
             fill="black"
           />
         </>

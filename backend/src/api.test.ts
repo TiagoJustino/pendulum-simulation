@@ -26,6 +26,7 @@ afterEach(async () => {
 const validPayload = {
   angle: 45,
   length: 100,
+  mass: 25,
   pivotPosition: { x: 200, y: 50 },
 };
 
@@ -156,7 +157,7 @@ describe("PUT /pendulum/:id", () => {
 
     const res = await request(app)
       .put(`/pendulum/${createRes.body.id}`)
-      .send({ angle: 90, length: 200, pivotPosition: { x: 300, y: 100 } });
+      .send({ angle: 90, length: 200, mass: 25, pivotPosition: { x: 300, y: 100 } });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ success: true });
@@ -165,7 +166,7 @@ describe("PUT /pendulum/:id", () => {
   it("returns success for non-existent id", async () => {
     const res = await request(app)
       .put("/pendulum/non-existent-id")
-      .send({ angle: 90, length: 200, pivotPosition: { x: 300, y: 100 } });
+      .send({ angle: 90, length: 200, mass: 25, pivotPosition: { x: 300, y: 100 } });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ success: true });

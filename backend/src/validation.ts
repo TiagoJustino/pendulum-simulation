@@ -7,7 +7,7 @@ export function validatePendulumInput(
     return { error: "Request body must be a JSON object" };
   }
 
-  const { angle, length, pivotPosition } = body as Record<string, unknown>;
+  const { angle, length, mass, pivotPosition } = body as Record<string, unknown>;
 
   if (typeof angle !== "number" || !isFinite(angle)) {
     return { error: "angle must be a finite number" };
@@ -15,6 +15,10 @@ export function validatePendulumInput(
 
   if (typeof length !== "number" || !isFinite(length) || length <= 0) {
     return { error: "length must be a positive finite number" };
+  }
+
+  if (typeof mass !== "number" || !isFinite(mass) || mass <= 0) {
+    return { error: "mass must be a positive finite number" };
   }
 
   if (typeof pivotPosition !== "object" || pivotPosition === null) {
@@ -32,6 +36,6 @@ export function validatePendulumInput(
   }
 
   return {
-    data: { angle, length, pivotPosition: { x, y } },
+    data: { angle, length, mass, pivotPosition: { x, y } },
   };
 }

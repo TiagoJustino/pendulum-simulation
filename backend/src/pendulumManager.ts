@@ -12,10 +12,10 @@ export class PendulumManager {
   private instances: Record<string, ChildProcess> = {};
 
   add(data: InitPendulumRequestDto): string {
-    const { angle, length, pivotPosition } = data;
+    const { angle, length, mass, pivotPosition } = data;
     const { x, y } = pivotPosition;
     const id = uuidv7();
-    const args = [id, `${angle}`, `${length}`, `${x}`, `${y}`];
+    const args = [id, `${angle}`, `${length}`, `${mass}`, `${x}`, `${y}`];
     this.instances[id] = fork(path.join(__dirname, "pendulumProc"), args, {
       silent: true,
     });
