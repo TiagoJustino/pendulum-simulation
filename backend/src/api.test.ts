@@ -157,7 +157,12 @@ describe("PUT /pendulum/:id", () => {
 
     const res = await request(app)
       .put(`/pendulum/${createRes.body.id}`)
-      .send({ angle: 90, length: 200, mass: 25, pivotPosition: { x: 300, y: 100 } });
+      .send({
+        angle: 90,
+        length: 200,
+        mass: 25,
+        pivotPosition: { x: 300, y: 100 },
+      });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ success: true });
@@ -166,7 +171,12 @@ describe("PUT /pendulum/:id", () => {
   it("returns success for non-existent id", async () => {
     const res = await request(app)
       .put("/pendulum/non-existent-id")
-      .send({ angle: 90, length: 200, mass: 25, pivotPosition: { x: 300, y: 100 } });
+      .send({
+        angle: 90,
+        length: 200,
+        mass: 25,
+        pivotPosition: { x: 300, y: 100 },
+      });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ success: true });
@@ -186,11 +196,60 @@ describe("PUT /pendulum/:id", () => {
   });
 });
 
-describe("GET /position/:id", () => {
-  it("returns error for non-existent pendulum", async () => {
-    const res = await request(app).get("/position/non-existent-id");
+describe("POST /gravity", () => {
+  it("returns success for a valid gravity value", async () => {
+    const res = await request(app).post("/gravity").send({ gravity: 9.8 });
 
-    expect(res.status).toBe(500);
-    expect(res.body).toEqual({ error: "Pendulum not initialized" });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ success: true });
+  });
+
+  it("returns success for gravity at the minimum boundary (1)", async () => {
+    const res = await request(app).post("/gravity").send({ gravity: 1 });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ success: true });
+  });
+
+  it("returns success for gravity at the maximum boundary (20)", async () => {
+    const res = await request(app).post("/gravity").send({ gravity: 20 });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ success: true });
+  });
+
+  it("returns 400 when gravity is missing", async () => {
+    const res = await request(app).post("/gravity").send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 when gravity is below minimum", async () => {
+    const res = await request(app).post("/gravity").send({ gravity: 0.5 });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 when gravity exceeds maximum", async () => {
+    const res = await request(app).post("/gravity").send({ gravity: 21 });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 when gravity is not a number", async () => {
+    const res = await request(app).post("/gravity").send({ gravity: "fast" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
+  });
+
+  it("returns 400 when gravity is Infinity", async () => {
+    const res = await request(app).post("/gravity").send({ gravity: Infinity });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty("error");
   });
 });

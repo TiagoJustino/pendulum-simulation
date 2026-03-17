@@ -35,6 +35,16 @@ describe("Pendulum", () => {
       pendulum.dispose();
     });
 
+    it("bob does not move when gravity is 0", () => {
+      const pendulum = new Pendulum(30, 450, 25, { x: 0, y: 0 }, null, 0);
+      const initial = { ...pendulum.getRelativeBobPosition() };
+
+      pendulum.nextPosition();
+
+      expect(pendulum.getRelativeBobPosition()).toEqual(initial);
+      pendulum.dispose();
+    });
+
     it("bob stays at rest when starting at angle 0", () => {
       const pendulum = new Pendulum(0, 450, 25, { x: 0, y: 0 });
 

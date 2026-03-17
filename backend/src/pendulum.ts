@@ -29,7 +29,6 @@ enum Command {
   START = "START",
 }
 
-const GRAVITY = 2;
 const PEER_TTL_MS = 150;
 // Window to collect all STOP messages before electing a coordinator
 const ELECTION_WINDOW_MS = 200;
@@ -62,6 +61,8 @@ export class Pendulum {
   private pendingAcks = new Set<string>();
   private electionTimer: NodeJS.Timeout | undefined;
   private restartTimeoutTimer: NodeJS.Timeout | undefined;
+  private restartCooldownTimer: NodeJS.Timeout | undefined;
+  private collisionEnabled = true;
 
   // angle is in degrees, length is in pixels, mass is in arbitrary units (= bob radius in px)
   constructor(
@@ -70,6 +71,7 @@ export class Pendulum {
     private mass: number,
     private pivotPosition: Point,
     private mqttClient: PendulumMqttClient | null = null,
+    private gravity: number = 2,
   ) {
     this.init();
     this.start();
@@ -89,6 +91,7 @@ export class Pendulum {
     if (this.intervalId) {
       return;
     }
+    this.startRestartCooldown();
     // update and publish the pendulum position every 30ms
     this.intervalId = setInterval(async () => {
       this.nextPosition();
@@ -183,15 +186,26 @@ export class Pendulum {
     this.pendingAcks.clear();
     clearTimeout(this.electionTimer);
     clearTimeout(this.restartTimeoutTimer);
+    clearTimeout(this.restartCooldownTimer);
     this.electionTimer = undefined;
     this.restartTimeoutTimer = undefined;
+    this.restartCooldownTimer = undefined;
+    this.collisionEnabled = true;
   }
 
-  // TODO: Consider pivotPosition
+  private startRestartCooldown() {
+    this.collisionEnabled = false;
+    clearTimeout(this.restartCooldownTimer);
+    this.restartCooldownTimer = setTimeout(() => {
+      this.collisionEnabled = true;
+    }, 500);
+  }
+
   async onPosition(id: string, position: AbsolutePosition): Promise<void> {
     this.knownPeers.set(id, Date.now());
 
     if (this.collisionRole !== "none") return;
+    if (!this.collisionEnabled) return;
 
     if (this.checkColision(position)) {
       // Snapshot active peers BEFORE pausing (they'll stop publishing)
@@ -267,6 +281,7 @@ export class Pendulum {
 
   update(data: InitPendulumRequestDto) {
     this.resetCollisionState();
+    const wasRunning = !!this.intervalId;
     this.pause();
     this.initialAngle = data.angle;
     this.length = data.length;
@@ -274,7 +289,9 @@ export class Pendulum {
     this.pivotPosition.x = data.pivotPosition.x;
     this.pivotPosition.y = data.pivotPosition.y;
     this.init();
-    this.start();
+    if (wasRunning) {
+      this.start();
+    }
   }
 
   getRelativeBobPosition(): Point {
@@ -298,9 +315,14 @@ export class Pendulum {
     }
   }
 
+  setGravity(value: number): void {
+    if (!isFinite(value)) return;
+    this.gravity = value;
+  }
+
   // Update the pendulum's position to next frame
   nextPosition(): void {
-    const resultantForce = GRAVITY * Math.sin(this.angle!);
+    const resultantForce = this.gravity * Math.sin(this.angle!);
     const angleAccel = (-1 * resultantForce) / this.length;
     this.angleVelocity! += angleAccel;
     this.angle! += this.angleVelocity!;

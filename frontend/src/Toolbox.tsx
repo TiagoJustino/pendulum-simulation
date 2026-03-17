@@ -13,6 +13,7 @@ interface Props {
   simulationState: SimulationState;
   onDecrease: () => void;
   onIncrease: () => void;
+  onSettings: () => void;
   onPause: () => void;
   onStop: () => void;
   onPlay: () => void;
@@ -22,8 +23,9 @@ interface Props {
 const disabledStyle = { opacity: 0.3, cursor: "not-allowed" } as const;
 const activeStyle = { cursor: "pointer" } as const;
 
-const Toolbox = ({ simulationState, onDecrease, onIncrease, onPause, onStop, onPlay, countdown }: Props) => {
+const Toolbox = ({ simulationState, onDecrease, onIncrease, onSettings, onPause, onStop, onPlay, countdown }: Props) => {
   const instancesDisabled = simulationState !== "stopped";
+  const settingsDisabled = simulationState !== "stopped";
   const pauseDisabled = simulationState === "paused" || simulationState === "stopped" || simulationState === "restarting";
   const stopDisabled = simulationState === "stopped";
   const playDisabled = simulationState === "running" || simulationState === "restarting";
@@ -41,7 +43,11 @@ const Toolbox = ({ simulationState, onDecrease, onIncrease, onPause, onStop, onP
         style={instancesDisabled ? disabledStyle : activeStyle}
       />
       <span style={{ borderLeft: "1px solid grey", height: "48px" }} />
-      <Settings size={48} />
+      <Settings
+        size={48}
+        onClick={settingsDisabled ? undefined : () => { console.log("[button] settings"); onSettings(); }}
+        style={settingsDisabled ? disabledStyle : activeStyle}
+      />
       <span style={{ borderLeft: "1px solid grey", height: "48px" }} />
       <PauseCircle
         size={48}

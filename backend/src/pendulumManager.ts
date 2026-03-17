@@ -63,6 +63,12 @@ export class PendulumManager {
     }
   }
 
+  setGravity(value: number): void {
+    for (const id of Object.keys(this.instances)) {
+      this.instances[id]?.send({ command: "SET_GRAVITY", gravity: value });
+    }
+  }
+
   update(id: string, data: InitPendulumRequestDto): void {
     this.instances[id]?.send({ command: "UPDATE", data });
   }

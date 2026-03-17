@@ -47,5 +47,9 @@ process.on("message", async (msg: any) => {
       console.log("Worker received shutdown command. Cleaning up...");
       await pendulum.dispose();
       process.exit(0);
+      break;
+    case "SET_GRAVITY":
+      pendulum.setGravity(msg.gravity);
+      break;
   }
 });

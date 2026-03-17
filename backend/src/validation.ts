@@ -39,3 +39,23 @@ export function validatePendulumInput(
     data: { angle, length, mass, pivotPosition: { x, y } },
   };
 }
+
+export function validateGravityInput(
+  body: unknown,
+): { data: { gravity: number } } | { error: string } {
+  if (typeof body !== "object" || body === null) {
+    return { error: "Request body must be a JSON object" };
+  }
+
+  const { gravity } = body as Record<string, unknown>;
+
+  if (typeof gravity !== "number" || !isFinite(gravity)) {
+    return { error: "gravity must be a finite number" };
+  }
+
+  if (gravity < 1 || gravity > 20) {
+    return { error: "gravity must be between 1 and 20" };
+  }
+
+  return { data: { gravity } };
+}

@@ -6,7 +6,7 @@ import express, {
 } from "express";
 import cors from "cors";
 import { PendulumManager } from "./pendulumManager.js";
-import { validatePendulumInput } from "./validation.js";
+import { validatePendulumInput, validateGravityInput } from "./validation.js";
 
 export function createApp() {
   const app: Application = express();
@@ -54,6 +54,16 @@ export function createApp() {
     res.status(200).json({ success: true });
   });
 
+  app.post("/gravity", (req: Request, res: Response) => {
+    const result = validateGravityInput(req.body);
+    if ("error" in result) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    manager.setGravity(result.data.gravity);
+    res.status(200).json({ success: true });
+  });
+
   app.delete("/pendulum", async (_req: Request, res: Response) => {
     manager.shutdownAll();
     res.status(200).json({ success: true });
@@ -64,21 +74,6 @@ export function createApp() {
     async (req: Request<{ id: string }>, res: Response) => {
       manager.shutdown(req.params.id);
       res.status(200).json({ success: true });
-    },
-  );
-
-  // @Deprecated in favor of mqtt
-  app.get(
-    "/position/:id",
-    async (req: Request<{ id: string }>, res: Response) => {
-      try {
-        const message = await manager.getPosition(req.params.id);
-        res.status(200).json(JSON.parse(message));
-      } catch (error) {
-        const msg =
-          error instanceof Error ? error.message : "Failed to get message";
-        res.status(500).json({ error: msg });
-      }
     },
   );
 

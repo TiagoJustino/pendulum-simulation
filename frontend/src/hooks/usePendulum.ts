@@ -2,17 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import {
   useMutation,
   type UseMutationResult,
-  useQuery,
 } from "@tanstack/react-query";
 import { useMqttSubscribe } from "@artcom/mqtt-topping-react";
 import type {
   ClearResponseDto,
   InitPendulumRequestDto,
   InitPendulumResponseDto,
-  Point,
 } from "@pendulum-simulation/common";
 
-const API_BASE = "http://localhost:3000";
+export const API_BASE = "http://localhost:3000";
 
 export const useInitPendulum = (
   body: InitPendulumRequestDto,
@@ -37,7 +35,7 @@ export const useInitPendulum = (
     if (enabled) {
       mutation.mutate(body);
     }
-  }, [body.angle, body.length, enabled]);
+  }, [enabled]);
 
   return mutation;
 };
@@ -94,7 +92,9 @@ export const useCollisionCountdown = () => {
     setCountdown(seconds);
     intervalRef.current = setInterval(() => {
       setCountdown((prev) => {
-        console.log(`[countdown] tick: ${prev} -> ${prev !== null && prev > 1 ? prev - 1 : null}`);
+        console.log(
+          `[countdown] tick: ${prev} -> ${prev !== null && prev > 1 ? prev - 1 : null}`,
+        );
         if (prev === null || prev <= 1) {
           clearInterval(intervalRef.current!);
           intervalRef.current = null;
@@ -140,15 +140,14 @@ export const usePlay = () =>
     },
   });
 
-/**
- * @Deprecated - use useMqttSubscribe
- */
-export const useGetPosition = () =>
-  useQuery<Point>({
-    queryKey: ["position"],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/position`);
+export const useUpdateGravity = () =>
+  useMutation({
+    mutationFn: async (gravity: number) => {
+      const res = await fetch(`${API_BASE}/gravity`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gravity }),
+      });
       return await res.json();
     },
-    refetchInterval: 100,
   });

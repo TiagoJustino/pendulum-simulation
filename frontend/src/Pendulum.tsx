@@ -5,52 +5,42 @@ import { useEffect, useState } from "react";
 import {
   useDeletePendulum,
   useInitPendulum,
-  useUpdatePendulum,
 } from "./hooks/usePendulum.ts";
-
-function randomInt(min: number, max: number) {
-  const minCeiled = Math.ceil(min);
-  const maxFloored = Math.floor(max);
-  return Math.floor(Math.random() * (maxFloored - minCeiled + 1)) + minCeiled;
-}
+import type { InitPendulumRequestDto } from "@pendulum-simulation/common";
 
 interface Props {
-  stageWidth: number;
+  index: number;
+  config: InitPendulumRequestDto;
+  configVersion: number;
   enabled: boolean;
+  onReady: (index: number, id: string) => void;
 }
 
-const Pendulum = ({ stageWidth, enabled }: Props) => {
+const Pendulum = ({ index, config, configVersion, enabled, onReady }: Props) => {
   const [bobPosition, setBobPosition] = useState<Point | null>(null);
-  const [angle] = useState(() => randomInt(0, 89));
-  const [length] = useState(() => randomInt(100, 500));
-  const [mass] = useState(() => randomInt(15, 40));
-  const [pivotPosition, setPivotPosition] = useState<Point>(() => {
-    return { x: randomInt(25, stageWidth - 25), y: 25 };
-  });
+
+  const { angle, length, mass, pivotPosition } = config;
 
   const initialBobPosition: Point = {
     x: pivotPosition.x + length * Math.sin((angle * Math.PI) / 180),
     y: pivotPosition.y + length * Math.cos((angle * Math.PI) / 180),
   };
   const displayBobPosition = bobPosition ?? initialBobPosition;
-  const { data: pendulum } = useInitPendulum(
-    { angle, length, mass, pivotPosition },
-    pivotPosition && enabled,
-  );
+
+  const { data: pendulum } = useInitPendulum(config, enabled);
   const { mutate: deletePendulum } = useDeletePendulum(pendulum?.id || "");
-  const { mutate: updatePendulum } = useUpdatePendulum(pendulum?.id || "");
 
+  // Report ID to App when init resolves
   useEffect(() => {
-    if (pivotPosition.x > stageWidth - 25 || pivotPosition.x < 25) {
-      setPivotPosition({ x: randomInt(25, stageWidth - 25), y: 25 });
+    if (pendulum?.id) {
+      onReady(index, pendulum.id);
     }
-  }, [stageWidth]);
+  }, [pendulum?.id, index, onReady]);
 
+  // Reset visual position to new initial when config is saved
   useEffect(() => {
-    if (pendulum?.id && pivotPosition.x >= 25) {
-      updatePendulum({ angle, length, mass, pivotPosition });
-    }
-  }, [pivotPosition]);
+    setBobPosition(null);
+  }, [configVersion]);
 
   useMqttSubscribe(
     `pendulum/${pendulum?.id}/position`,
@@ -61,7 +51,6 @@ const Pendulum = ({ stageWidth, enabled }: Props) => {
 
   useEffect(() => {
     return () => {
-      // Unsubscribe to `pendulum/${pendulum?.id}/position`
       deletePendulum();
     };
   }, []);

@@ -1,59 +1,35 @@
-import { Layer, Stage } from "react-konva";
-import { useClear } from "./hooks/usePendulum.ts";
-import { useState, useEffect, useRef } from "react";
+import { Stage, Layer } from "react-konva";
 import Pendulum from "./Pendulum.tsx";
+import { useClear } from "./hooks/usePendulum.ts";
+import type { InitPendulumRequestDto } from "@pendulum-simulation/common";
 
 interface Props {
-  numPendulums: number;
+  width: number;
+  height: number;
+  pendulumConfigs: InitPendulumRequestDto[];
+  configVersion: number;
+  onReady: (index: number, id: string) => void;
 }
 
-const ResponsiveStage = ({ numPendulums }: Props) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-
+const ResponsiveStage = ({ width, height, pendulumConfigs, configVersion, onReady }: Props) => {
   const { data: clearResponse } = useClear();
-
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        setDimensions({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight,
-        });
-      }
-    };
-
-    updateDimensions(); // Set initial dimensions
-
-    window.addEventListener("resize", updateDimensions);
-
-    return () => {
-      window.removeEventListener("resize", updateDimensions);
-    };
-  }, []);
+  const enabled = clearResponse?.success ?? false;
 
   return (
-    <div
-      ref={containerRef}
-      style={{
-        width: "100%",
-        flex: 1,
-        overflow: "hidden",
-        border: "1px solid grey",
-      }}
-    >
-      <Stage width={dimensions.width} height={dimensions.height}>
-        <Layer>
-          {Array.from({ length: numPendulums }, (_, i) => (
-            <Pendulum
-              key={i}
-              stageWidth={dimensions.width}
-              enabled={clearResponse?.success ?? false}
-            />
-          ))}
-        </Layer>
-      </Stage>
-    </div>
+    <Stage width={width} height={height}>
+      <Layer>
+        {pendulumConfigs.map((config, i) => (
+          <Pendulum
+            key={i}
+            index={i}
+            config={config}
+            configVersion={configVersion}
+            enabled={enabled}
+            onReady={onReady}
+          />
+        ))}
+      </Layer>
+    </Stage>
   );
 };
 
