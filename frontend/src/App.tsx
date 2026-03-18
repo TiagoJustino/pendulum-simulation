@@ -8,6 +8,7 @@ import {
   useStop,
   usePlay,
   useCollisionCountdown,
+  useListPendulums,
 } from "./hooks/usePendulum.ts";
 import type { InitPendulumRequestDto } from "@pendulum-simulation/common";
 
@@ -39,14 +40,13 @@ function AppInner() {
   });
   const [pendulumConfigs, setPendulumConfigs] = useState<
     InitPendulumRequestDto[]
-  >(() => Array.from({ length: 5 }, () => randomConfig(window.innerWidth)));
-  const [pendulumIds, setPendulumIds] = useState<(string | undefined)[]>(() =>
-    Array.from({ length: 5 }, () => undefined),
-  );
+  >([]);
+  const [pendulumIds, setPendulumIds] = useState<(string | undefined)[]>([]);
   const [gravity, setGravity] = useState(9.8);
   const [wind, setWind] = useState(0);
   const [configVersion, setConfigVersion] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   const [simulationState, setSimulationState] =
     useState<SimulationState>("running");
@@ -54,6 +54,23 @@ function AppInner() {
   const { mutate: stop } = useStop();
   const { mutate: play } = usePlay();
   const { countdown, clearCountdown } = useCollisionCountdown();
+  const { data: existingData } = useListPendulums();
+
+  useEffect(() => {
+    if (!existingData || initialized) return;
+    setInitialized(true);
+    if (existingData.pendulums.length > 0) {
+      setPendulumConfigs(existingData.pendulums.map((p) => p.config));
+      setPendulumIds(existingData.pendulums.map((p) => p.id));
+    } else {
+      const defaultConfigs = Array.from({ length: 5 }, () =>
+        randomConfig(window.innerWidth),
+      );
+      setPendulumConfigs(defaultConfigs);
+      setPendulumIds(Array.from({ length: 5 }, () => undefined));
+    }
+    setSimulationState(existingData.state);
+  }, [existingData]);
 
   useEffect(() => {
     const handleResize = () =>
@@ -66,10 +83,6 @@ function AppInner() {
     console.log(`[state] ${simulationState} -> ${next}`);
     setSimulationState(next);
   };
-
-  useEffect(() => {
-    play();
-  }, []);
 
   useEffect(() => {
     if (countdown !== null) {
@@ -159,13 +172,16 @@ function AppInner() {
           />
         </div>
       </section>
-      <ResponsiveStage
-        width={dimensions.width}
-        height={dimensions.height}
-        pendulumConfigs={pendulumConfigs}
-        configVersion={configVersion}
-        onReady={handleReady}
-      />
+      {initialized && (
+        <ResponsiveStage
+          width={dimensions.width}
+          height={dimensions.height}
+          pendulumConfigs={pendulumConfigs}
+          pendulumIds={pendulumIds}
+          configVersion={configVersion}
+          onReady={handleReady}
+        />
+      )}
       {settingsOpen && (
         <SettingsPanel
           pendulumConfigs={pendulumConfigs}

@@ -23,3 +23,13 @@ export type InitPendulumResponseDto = {
 export type ClearResponseDto = {
   success: boolean;
 };
+
+export type PendulumListItemDto = {
+  id: string;
+  config: InitPendulumRequestDto;
+};
+
+export type ListPendulumResponseDto = {
+  pendulums: PendulumListItemDto[];
+  state: "running" | "paused" | "stopped";
+};

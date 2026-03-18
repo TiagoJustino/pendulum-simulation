@@ -12,13 +12,26 @@ type SimulationState = "running" | "paused" | "stopped";
 
 export class PendulumManager {
   private instances: Record<string, ChildProcess> = {};
+  private configs: Record<string, InitPendulumRequestDto> = {};
   private state: SimulationState = "running";
+
+  list(): { id: string; config: InitPendulumRequestDto }[] {
+    return Object.keys(this.instances).map((id) => ({
+      id,
+      config: this.configs[id]!,
+    }));
+  }
+
+  getState(): SimulationState {
+    return this.state;
+  }
 
   add(data: InitPendulumRequestDto): string {
     const { angle, length, mass, pivotPosition } = data;
     const { x, y } = pivotPosition;
     const id = uuidv7();
     const args = [id, `${angle}`, `${length}`, `${mass}`, `${x}`, `${y}`];
+    this.configs[id] = data;
     this.instances[id] = fork(path.join(__dirname, "pendulumProc"), args, {
       silent: true,
     });
@@ -38,6 +51,7 @@ export class PendulumManager {
   shutdown(id: string): void {
     this.instances[id]?.send({ command: "SHUTDOWN" });
     delete this.instances[id];
+    delete this.configs[id];
   }
 
   shutdownAll(): void {

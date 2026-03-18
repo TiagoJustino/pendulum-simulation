@@ -23,6 +23,13 @@ export function createApp() {
 
   const manager = new PendulumManager();
 
+  app.get("/pendulums", (_req: Request, res: Response) => {
+    res.status(200).json({
+      pendulums: manager.list(),
+      state: manager.getState(),
+    });
+  });
+
   app.post("/add-pendulum", async (req: Request, res: Response) => {
     const result = validatePendulumInput(req.body);
     if ("error" in result) {

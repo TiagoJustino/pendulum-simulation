@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { useMutation, type UseMutationResult } from "@tanstack/react-query";
+import { useMutation, useQuery, type UseMutationResult } from "@tanstack/react-query";
 import { useMqttSubscribe } from "@artcom/mqtt-topping-react";
 import type {
   ClearResponseDto,
   InitPendulumRequestDto,
   InitPendulumResponseDto,
+  ListPendulumResponseDto,
 } from "@pendulum-simulation/common";
 
 export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
@@ -61,8 +62,8 @@ export const useDeletePendulum = (id: string) =>
     },
   });
 
-export const useClear = () => {
-  const mutation = useMutation<ClearResponseDto>({
+export const useClear = () =>
+  useMutation<ClearResponseDto>({
     mutationFn: async () => {
       const res = await fetch(`${API_BASE}/pendulum`, {
         method: "DELETE",
@@ -72,12 +73,16 @@ export const useClear = () => {
     },
   });
 
-  useEffect(() => {
-    mutation.mutate();
-  }, [mutation.mutate]);
-
-  return mutation;
-};
+export const useListPendulums = () =>
+  useQuery<ListPendulumResponseDto>({
+    queryKey: ["pendulums"],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/pendulums`);
+      return await res.json();
+    },
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
 
 export const useCollisionCountdown = () => {
   const [countdown, setCountdown] = useState<number | null>(null);

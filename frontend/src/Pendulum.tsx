@@ -9,7 +9,7 @@ interface Props {
   index: number;
   config: InitPendulumRequestDto;
   configVersion: number;
-  enabled: boolean;
+  existingId?: string;
   onReady: (index: number, id: string) => void;
 }
 
@@ -17,7 +17,7 @@ const Pendulum = ({
   index,
   config,
   configVersion,
-  enabled,
+  existingId,
   onReady,
 }: Props) => {
   const [bobPosition, setBobPosition] = useState<Point | null>(null);
@@ -30,15 +30,17 @@ const Pendulum = ({
   };
   const displayBobPosition = bobPosition ?? initialBobPosition;
 
-  const { data: pendulum } = useInitPendulum(config, enabled);
-  const { mutate: deletePendulum } = useDeletePendulum(pendulum?.id || "");
+  // Only create a new pendulum if we don't have an existing one to adopt
+  const { data: created } = useInitPendulum(config, existingId === undefined);
+  const pendulumId = existingId ?? created?.id;
+  const { mutate: deletePendulum } = useDeletePendulum(pendulumId || "");
 
-  // Report ID to App when init resolves
+  // Report ID to App when init resolves (only for freshly created pendulums)
   useEffect(() => {
-    if (pendulum?.id) {
-      onReady(index, pendulum.id);
+    if (created?.id) {
+      onReady(index, created.id);
     }
-  }, [pendulum?.id, index, onReady]);
+  }, [created?.id, index, onReady]);
 
   // Reset visual position to new initial when config is saved
   useEffect(() => {
@@ -46,13 +48,15 @@ const Pendulum = ({
   }, [configVersion]);
 
   useMqttSubscribe(
-    `pendulum/${pendulum?.id}/position`,
+    `pendulum/${pendulumId}/position`,
     (position: AbsolutePosition, _topic) => {
       setBobPosition({ x: position.bobPosition.x, y: position.bobPosition.y });
     },
   );
 
+  // Only delete on unmount for pendulums we created (not adopted ones)
   useEffect(() => {
+    if (existingId !== undefined) return;
     return () => {
       deletePendulum();
     };

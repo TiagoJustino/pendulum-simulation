@@ -223,7 +223,6 @@ flowchart LR
 - The `-` button is additionally disabled when only one instance remains.
 - The `restarting` state is driven entirely by the MQTT `pendulum/countdown` topic — it is not triggered by a button.
 - Pressing Stop during `restarting` clears the countdown immediately and moves to `stopped`, preventing any auto-transition back to `running`.
-- On mount, the frontend calls `play()` to sync the backend to `running`.
 
 ## API
 
@@ -376,9 +375,9 @@ Since `backend` depends on `@pendulum-simulation/common`, all services build fro
 
 ## Known Limitations
 
-- **Single-session only** — on mount, the frontend clears all running pendulums and spawns a fresh set. If a second browser tab or client connects, it will tear down the first session's simulation. The backend has no concept of sessions or connected clients.
+- **No real-time multi-client sync for structural changes** — on mount, each frontend calls `GET /pendulums` and adopts the current backend state, so all clients start in sync. However, structural changes made by one client (adding or removing a pendulum) are not pushed to other connected clients — they only see the change if they reload. Play/pause/stop and physics updates (position, gravity, wind) are propagated to all clients in real time via MQTT.
 
-  **Proposed solution:** introduce a session ID generated on the frontend (e.g. a UUID stored in `sessionStorage`) and sent as a header or query parameter on every API request. The backend scopes all pendulum instances to a session — `DELETE /pendulum` only clears the calling session's pendulums, and MQTT topics include the session ID (e.g. `pendulum/{sessionId}/{id}/position`). Sessions can be garbage-collected after a configurable idle timeout.
+  **Proposed solution:** publish a `pendulum/roster` MQTT topic whenever a pendulum is added or removed. Each frontend subscribes to this topic and updates its local pendulum list accordingly — no polling or session concept required.
 
 ## Future Work
 
