@@ -165,6 +165,7 @@ Both gravity (`g`) and wind (a constant horizontal force) are configurable at ru
 | `pendulum/command`    | Any pendulum          | All pendulums            | `{ id: string, command: "STOP" \| "RESTART" }` |
 | `pendulum/+/status`   | Each pendulum         | All pendulums            | `{ status: "ACK" }`                            |
 | `pendulum/countdown`  | Coordinator pendulum  | Frontend                 | `{ seconds: number }`                          |
+| `pendulum/roster`     | Backend server        | All frontends            | `{ pendulums: PendulumListItemDto[] }`         |
 
 ## Configuration
 
@@ -375,9 +376,7 @@ Since `backend` depends on `@pendulum-simulation/common`, all services build fro
 
 ## Known Limitations
 
-- **No real-time multi-client sync for structural changes** — on mount, each frontend calls `GET /pendulums` and adopts the current backend state, so all clients start in sync. However, structural changes made by one client (adding or removing a pendulum) are not pushed to other connected clients — they only see the change if they reload. Play/pause/stop and physics updates (position, gravity, wind) are propagated to all clients in real time via MQTT.
-
-  **Proposed solution:** publish a `pendulum/roster` MQTT topic whenever a pendulum is added or removed. Each frontend subscribes to this topic and updates its local pendulum list accordingly — no polling or session concept required.
+- **No multi-session support** — all connected frontends share a single global simulation. Any client can add, remove, or control pendulums and those changes are reflected everywhere in real time via `pendulum/roster` and MQTT. There is no concept of isolated sessions or per-user simulation environments.
 
 ## Future Work
 

@@ -11,8 +11,11 @@ import {
   validateGravityInput,
   validateWindInput,
 } from "./validation.js";
+import type { PendulumListItemDto } from "@pendulum-simulation/common";
 
-export function createApp() {
+export function createApp(
+  onRosterChange?: (pendulums: PendulumListItemDto[]) => void,
+) {
   const app: Application = express();
 
   const allowedOrigins = process.env.CORS_ORIGIN
@@ -37,6 +40,7 @@ export function createApp() {
       return;
     }
     const id = manager.add(result.data);
+    onRosterChange?.(manager.list());
     res.status(200).json({ id });
   });
 
@@ -90,6 +94,7 @@ export function createApp() {
 
   app.delete("/pendulum", async (_req: Request, res: Response) => {
     manager.shutdownAll();
+    onRosterChange?.([]);
     res.status(200).json({ success: true });
   });
 
@@ -97,6 +102,7 @@ export function createApp() {
     "/pendulum/:id",
     async (req: Request<{ id: string }>, res: Response) => {
       manager.shutdown(req.params.id);
+      onRosterChange?.(manager.list());
       res.status(200).json({ success: true });
     },
   );

@@ -9,6 +9,7 @@ import {
   usePlay,
   useCollisionCountdown,
   useListPendulums,
+  useRosterSubscription,
 } from "./hooks/usePendulum.ts";
 import type { InitPendulumRequestDto } from "@pendulum-simulation/common";
 
@@ -55,6 +56,13 @@ function AppInner() {
   const { mutate: play } = usePlay();
   const { countdown, clearCountdown } = useCollisionCountdown();
   const { data: existingData } = useListPendulums();
+
+  useRosterSubscription(
+    useCallback((pendulums) => {
+      setPendulumConfigs(pendulums.map((p) => p.config));
+      setPendulumIds(pendulums.map((p) => p.id));
+    }, []),
+  );
 
   useEffect(() => {
     if (!existingData || initialized) return;
@@ -199,7 +207,9 @@ function AppInner() {
 
 function App() {
   return (
-    <MqttProvider uri={import.meta.env.VITE_MQTT_WS_URL ?? "ws://127.0.0.1:3002/mqtt"}>
+    <MqttProvider
+      uri={import.meta.env.VITE_MQTT_WS_URL ?? "ws://127.0.0.1:3002/mqtt"}
+    >
       <AppInner />
     </MqttProvider>
   );

@@ -54,9 +54,7 @@ const Pendulum = ({
     },
   );
 
-  // Only delete on unmount for pendulums we created (not adopted ones)
   useEffect(() => {
-    if (existingId !== undefined) return;
     return () => {
       deletePendulum();
     };

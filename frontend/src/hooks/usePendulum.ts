@@ -1,14 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { useMutation, useQuery, type UseMutationResult } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  type UseMutationResult,
+} from "@tanstack/react-query";
 import { useMqttSubscribe } from "@artcom/mqtt-topping-react";
 import type {
   ClearResponseDto,
   InitPendulumRequestDto,
   InitPendulumResponseDto,
   ListPendulumResponseDto,
+  PendulumListItemDto,
 } from "@pendulum-simulation/common";
 
-export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+export const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 
 export const useInitPendulum = (
   body: InitPendulumRequestDto,
@@ -72,6 +78,17 @@ export const useClear = () =>
       return await res.json();
     },
   });
+
+export const useRosterSubscription = (
+  onRoster: (pendulums: PendulumListItemDto[]) => void,
+) => {
+  useMqttSubscribe(
+    "pendulum/roster",
+    ({ pendulums }: { pendulums: PendulumListItemDto[] }) => {
+      onRoster(pendulums);
+    },
+  );
+};
 
 export const useListPendulums = () =>
   useQuery<ListPendulumResponseDto>({
