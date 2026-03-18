@@ -51,5 +51,8 @@ process.on("message", async (msg: any) => {
     case "SET_GRAVITY":
       pendulum.setGravity(msg.gravity);
       break;
+    case "SET_WIND":
+      pendulum.setWind(msg.wind);
+      break;
   }
 });

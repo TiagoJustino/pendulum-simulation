@@ -7,7 +7,10 @@ export function validatePendulumInput(
     return { error: "Request body must be a JSON object" };
   }
 
-  const { angle, length, mass, pivotPosition } = body as Record<string, unknown>;
+  const { angle, length, mass, pivotPosition } = body as Record<
+    string,
+    unknown
+  >;
 
   if (typeof angle !== "number" || !isFinite(angle)) {
     return { error: "angle must be a finite number" };
@@ -58,4 +61,24 @@ export function validateGravityInput(
   }
 
   return { data: { gravity } };
+}
+
+export function validateWindInput(
+  body: unknown,
+): { data: { wind: number } } | { error: string } {
+  if (typeof body !== "object" || body === null) {
+    return { error: "Request body must be a JSON object" };
+  }
+
+  const { wind } = body as Record<string, unknown>;
+
+  if (typeof wind !== "number" || !isFinite(wind)) {
+    return { error: "wind must be a finite number" };
+  }
+
+  if (wind < 0 || wind > 40) {
+    return { error: "wind must be between 0 and 40" };
+  }
+
+  return { data: { wind } };
 }

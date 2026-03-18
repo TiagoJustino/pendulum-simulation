@@ -1,29 +1,59 @@
 import { useState } from "react";
 import type { InitPendulumRequestDto } from "@pendulum-simulation/common";
-import { useUpdateGravity, API_BASE } from "./hooks/usePendulum.ts";
+import {
+  useUpdateGravity,
+  useUpdateWind,
+  API_BASE,
+} from "./hooks/usePendulum.ts";
 
 interface Props {
   pendulumConfigs: InitPendulumRequestDto[];
   pendulumIds: (string | undefined)[];
   gravity: number;
+  wind: number;
   stageWidth: number;
-  onSave: (configs: InitPendulumRequestDto[], gravity: number) => void;
+  onSave: (
+    configs: InitPendulumRequestDto[],
+    gravity: number,
+    wind: number,
+  ) => void;
   onClose: () => void;
 }
 
-const SettingsPanel = ({ pendulumConfigs, pendulumIds, gravity, stageWidth, onSave, onClose }: Props) => {
+const SettingsPanel = ({
+  pendulumConfigs,
+  pendulumIds,
+  gravity,
+  wind,
+  stageWidth,
+  onSave,
+  onClose,
+}: Props) => {
   const [draftConfigs, setDraftConfigs] = useState<InitPendulumRequestDto[]>(
-    () => pendulumConfigs.map((c) => ({ ...c, pivotPosition: { ...c.pivotPosition } }))
+    () =>
+      pendulumConfigs.map((c) => ({
+        ...c,
+        pivotPosition: { ...c.pivotPosition },
+      })),
   );
   const [draftGravity, setDraftGravity] = useState(gravity);
+  const [draftWind, setDraftWind] = useState(wind);
 
   const { mutate: updateGravity } = useUpdateGravity();
+  const { mutate: updateWind } = useUpdateWind();
 
-  const updateConfig = (index: number, field: keyof Omit<InitPendulumRequestDto, "pivotPosition">, raw: string) => {
+  const updateConfig = (
+    index: number,
+    field: keyof Omit<InitPendulumRequestDto, "pivotPosition">,
+    raw: string,
+  ) => {
     const value = parseFloat(raw);
     if (isNaN(value)) return;
     setDraftConfigs((prev) => {
-      const next = prev.map((c) => ({ ...c, pivotPosition: { ...c.pivotPosition } }));
+      const next = prev.map((c) => ({
+        ...c,
+        pivotPosition: { ...c.pivotPosition },
+      }));
       (next[index] as any)[field] = value;
       return next;
     });
@@ -33,7 +63,10 @@ const SettingsPanel = ({ pendulumConfigs, pendulumIds, gravity, stageWidth, onSa
     const value = parseFloat(raw);
     if (isNaN(value)) return;
     setDraftConfigs((prev) => {
-      const next = prev.map((c) => ({ ...c, pivotPosition: { ...c.pivotPosition } }));
+      const next = prev.map((c) => ({
+        ...c,
+        pivotPosition: { ...c.pivotPosition },
+      }));
       next[index].pivotPosition.x = value;
       return next;
     });
@@ -57,21 +90,36 @@ const SettingsPanel = ({ pendulumConfigs, pendulumIds, gravity, stageWidth, onSa
       },
     }));
     const clampedGravity = clamp(draftGravity, 1, 20);
+    const clampedWind = clamp(draftWind, 0, 40);
 
     // Log what changed
     const configChanges = clamped
       .map((c, i) => {
         const orig = pendulumConfigs[i];
         const changes: Record<string, { from: number; to: number }> = {};
-        if (c.angle !== orig.angle) changes.angle = { from: orig.angle, to: c.angle };
-        if (c.length !== orig.length) changes.length = { from: orig.length, to: c.length };
-        if (c.mass !== orig.mass) changes.mass = { from: orig.mass, to: c.mass };
-        if (c.pivotPosition.x !== orig.pivotPosition.x) changes.pivotX = { from: orig.pivotPosition.x, to: c.pivotPosition.x };
-        return Object.keys(changes).length > 0 ? { pendulum: `P${i + 1}`, ...changes } : null;
+        if (c.angle !== orig.angle)
+          changes.angle = { from: orig.angle, to: c.angle };
+        if (c.length !== orig.length)
+          changes.length = { from: orig.length, to: c.length };
+        if (c.mass !== orig.mass)
+          changes.mass = { from: orig.mass, to: c.mass };
+        if (c.pivotPosition.x !== orig.pivotPosition.x)
+          changes.pivotX = {
+            from: orig.pivotPosition.x,
+            to: c.pivotPosition.x,
+          };
+        return Object.keys(changes).length > 0
+          ? { pendulum: `P${i + 1}`, ...changes }
+          : null;
       })
       .filter(Boolean);
     console.log("[settings] changes", {
-      gravity: clampedGravity !== gravity ? { from: gravity, to: clampedGravity } : "unchanged",
+      gravity:
+        clampedGravity !== gravity
+          ? { from: gravity, to: clampedGravity }
+          : "unchanged",
+      wind:
+        clampedWind !== wind ? { from: wind, to: clampedWind } : "unchanged",
       pendulums: configChanges.length > 0 ? configChanges : "unchanged",
     });
 
@@ -92,7 +140,12 @@ const SettingsPanel = ({ pendulumConfigs, pendulumIds, gravity, stageWidth, onSa
       updateGravity(clampedGravity);
     }
 
-    onSave(clamped, clampedGravity);
+    if (clampedWind !== wind) {
+      console.log(`[settings] POST /wind`, { wind: clampedWind });
+      updateWind(clampedWind);
+    }
+
+    onSave(clamped, clampedGravity, clampedWind);
   };
 
   const overlayStyle: React.CSSProperties = {
@@ -181,7 +234,12 @@ const SettingsPanel = ({ pendulumConfigs, pendulumIds, gravity, stageWidth, onSa
           <strong style={{ fontSize: "16px" }}>Settings</strong>
           <span
             onClick={onClose}
-            style={{ cursor: "pointer", fontSize: "20px", opacity: 0.5, lineHeight: 1 }}
+            style={{
+              cursor: "pointer",
+              fontSize: "20px",
+              opacity: 0.5,
+              lineHeight: 1,
+            }}
           >
             ✕
           </span>
@@ -190,11 +248,21 @@ const SettingsPanel = ({ pendulumConfigs, pendulumIds, gravity, stageWidth, onSa
         {/* Body */}
         <div style={bodyStyle}>
           {/* General section */}
-          <div style={{ borderBottom: "1px solid #eee", paddingBottom: "16px" }}>
+          <div
+            style={{ borderBottom: "1px solid #eee", paddingBottom: "16px" }}
+          >
             <div style={sectionLabelStyle}>General</div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <label style={{ fontSize: "14px" }}>Gravity</label>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "10px" }}
+              >
                 <input
                   type="range"
                   min={1}
@@ -204,8 +272,47 @@ const SettingsPanel = ({ pendulumConfigs, pendulumIds, gravity, stageWidth, onSa
                   onChange={(e) => setDraftGravity(parseFloat(e.target.value))}
                   style={{ width: "160px", accentColor: "#333" }}
                 />
-                <span style={{ fontSize: "14px", fontWeight: 600, width: "36px", textAlign: "right" }}>
+                <span
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    width: "36px",
+                    textAlign: "right",
+                  }}
+                >
                   {draftGravity.toFixed(1)}
+                </span>
+              </div>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <label style={{ fontSize: "14px" }}>Wind</label>
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "10px" }}
+              >
+                <input
+                  type="range"
+                  min={0}
+                  max={40}
+                  step={0.1}
+                  value={draftWind}
+                  onChange={(e) => setDraftWind(parseFloat(e.target.value))}
+                  style={{ width: "160px", accentColor: "#333" }}
+                />
+                <span
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    width: "36px",
+                    textAlign: "right",
+                  }}
+                >
+                  {draftWind.toFixed(1)}
                 </span>
               </div>
             </div>
@@ -216,7 +323,13 @@ const SettingsPanel = ({ pendulumConfigs, pendulumIds, gravity, stageWidth, onSa
             <div style={sectionLabelStyle}>Pendulums</div>
 
             {/* Column headers */}
-            <div style={{ ...gridStyle, paddingBottom: "6px", borderBottom: "1px solid #eee" }}>
+            <div
+              style={{
+                ...gridStyle,
+                paddingBottom: "6px",
+                borderBottom: "1px solid #eee",
+              }}
+            >
               <span />
               <span style={colHeaderStyle}>Angle °</span>
               <span style={colHeaderStyle}>Length px</span>
@@ -231,10 +344,13 @@ const SettingsPanel = ({ pendulumConfigs, pendulumIds, gravity, stageWidth, onSa
                 style={{
                   ...gridStyle,
                   padding: "8px 0",
-                  borderBottom: i < draftConfigs.length - 1 ? "1px solid #f4f4f4" : "none",
+                  borderBottom:
+                    i < draftConfigs.length - 1 ? "1px solid #f4f4f4" : "none",
                 }}
               >
-                <span style={{ fontSize: "13px", fontWeight: 600, color: "#555" }}>
+                <span
+                  style={{ fontSize: "13px", fontWeight: 600, color: "#555" }}
+                >
                   P{i + 1}
                 </span>
                 <input
@@ -244,7 +360,13 @@ const SettingsPanel = ({ pendulumConfigs, pendulumIds, gravity, stageWidth, onSa
                   max={89}
                   style={inputStyle}
                   onChange={(e) => updateConfig(i, "angle", e.target.value)}
-                  onBlur={(e) => updateConfig(i, "angle", String(clamp(parseFloat(e.target.value) || 0, 0, 89)))}
+                  onBlur={(e) =>
+                    updateConfig(
+                      i,
+                      "angle",
+                      String(clamp(parseFloat(e.target.value) || 0, 0, 89)),
+                    )
+                  }
                 />
                 <input
                   type="number"
@@ -253,7 +375,15 @@ const SettingsPanel = ({ pendulumConfigs, pendulumIds, gravity, stageWidth, onSa
                   max={500}
                   style={inputStyle}
                   onChange={(e) => updateConfig(i, "length", e.target.value)}
-                  onBlur={(e) => updateConfig(i, "length", String(clamp(parseFloat(e.target.value) || 100, 100, 500)))}
+                  onBlur={(e) =>
+                    updateConfig(
+                      i,
+                      "length",
+                      String(
+                        clamp(parseFloat(e.target.value) || 100, 100, 500),
+                      ),
+                    )
+                  }
                 />
                 <input
                   type="number"
@@ -262,7 +392,13 @@ const SettingsPanel = ({ pendulumConfigs, pendulumIds, gravity, stageWidth, onSa
                   max={40}
                   style={inputStyle}
                   onChange={(e) => updateConfig(i, "mass", e.target.value)}
-                  onBlur={(e) => updateConfig(i, "mass", String(clamp(parseFloat(e.target.value) || 15, 15, 40)))}
+                  onBlur={(e) =>
+                    updateConfig(
+                      i,
+                      "mass",
+                      String(clamp(parseFloat(e.target.value) || 15, 15, 40)),
+                    )
+                  }
                 />
                 <input
                   type="number"
@@ -271,7 +407,18 @@ const SettingsPanel = ({ pendulumConfigs, pendulumIds, gravity, stageWidth, onSa
                   max={stageWidth - 25}
                   style={inputStyle}
                   onChange={(e) => updatePivotX(i, e.target.value)}
-                  onBlur={(e) => updatePivotX(i, String(clamp(parseFloat(e.target.value) || 25, 25, stageWidth - 25)))}
+                  onBlur={(e) =>
+                    updatePivotX(
+                      i,
+                      String(
+                        clamp(
+                          parseFloat(e.target.value) || 25,
+                          25,
+                          stageWidth - 25,
+                        ),
+                      ),
+                    )
+                  }
                 />
               </div>
             ))}

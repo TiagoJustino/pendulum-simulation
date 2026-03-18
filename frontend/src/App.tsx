@@ -3,7 +3,12 @@ import ResponsiveStage from "./ResponsiveStage.tsx";
 import { MqttProvider } from "@artcom/mqtt-topping-react";
 import Toolbox from "./Toolbox.tsx";
 import SettingsPanel from "./SettingsPanel.tsx";
-import { usePause, useStop, usePlay, useCollisionCountdown } from "./hooks/usePendulum.ts";
+import {
+  usePause,
+  useStop,
+  usePlay,
+  useCollisionCountdown,
+} from "./hooks/usePendulum.ts";
 import type { InitPendulumRequestDto } from "@pendulum-simulation/common";
 
 const MIN_INSTANCES = 1;
@@ -12,7 +17,10 @@ const MAX_INSTANCES = 10;
 type SimulationState = "running" | "paused" | "stopped" | "restarting";
 
 function randomInt(min: number, max: number) {
-  return Math.floor(Math.random() * (Math.floor(max) - Math.ceil(min) + 1)) + Math.ceil(min);
+  return (
+    Math.floor(Math.random() * (Math.floor(max) - Math.ceil(min) + 1)) +
+    Math.ceil(min)
+  );
 }
 
 function randomConfig(stageWidth: number): InitPendulumRequestDto {
@@ -29,17 +37,19 @@ function AppInner() {
     width: window.innerWidth,
     height: window.innerHeight,
   });
-  const [pendulumConfigs, setPendulumConfigs] = useState<InitPendulumRequestDto[]>(
-    () => Array.from({ length: 5 }, () => randomConfig(window.innerWidth))
+  const [pendulumConfigs, setPendulumConfigs] = useState<
+    InitPendulumRequestDto[]
+  >(() => Array.from({ length: 5 }, () => randomConfig(window.innerWidth)));
+  const [pendulumIds, setPendulumIds] = useState<(string | undefined)[]>(() =>
+    Array.from({ length: 5 }, () => undefined),
   );
-  const [pendulumIds, setPendulumIds] = useState<(string | undefined)[]>(
-    () => Array.from({ length: 5 }, () => undefined)
-  );
-  const [gravity, setGravity] = useState(2.0);
+  const [gravity, setGravity] = useState(9.8);
+  const [wind, setWind] = useState(0);
   const [configVersion, setConfigVersion] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const [simulationState, setSimulationState] = useState<SimulationState>("running");
+  const [simulationState, setSimulationState] =
+    useState<SimulationState>("running");
   const { mutate: pause } = usePause();
   const { mutate: stop } = useStop();
   const { mutate: play } = usePlay();
@@ -57,7 +67,9 @@ function AppInner() {
     setSimulationState(next);
   };
 
-  useEffect(() => { play(); }, []);
+  useEffect(() => {
+    play();
+  }, []);
 
   useEffect(() => {
     if (countdown !== null) {
@@ -93,9 +105,14 @@ function AppInner() {
     });
   };
 
-  const handleSave = (configs: InitPendulumRequestDto[], newGravity: number) => {
+  const handleSave = (
+    configs: InitPendulumRequestDto[],
+    newGravity: number,
+    newWind: number,
+  ) => {
     setPendulumConfigs(configs);
     setGravity(newGravity);
+    setWind(newWind);
     setConfigVersion((v) => v + 1);
     setSettingsOpen(false);
   };
@@ -112,10 +129,13 @@ function AppInner() {
         <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
           <div>
             <h1>Pendulum Simulation</h1>
-            <p>This is a Simple Pendulum simulation using React and Typescript.</p>
+            <p>
+              This is a Simple Pendulum simulation using React and Typescript.
+            </p>
           </div>
           <Toolbox
             simulationState={simulationState}
+            instanceCount={pendulumConfigs.length}
             onDecrease={handleDecrease}
             onIncrease={handleIncrease}
             onSettings={() => setSettingsOpen(true)}
@@ -151,6 +171,7 @@ function AppInner() {
           pendulumConfigs={pendulumConfigs}
           pendulumIds={pendulumIds}
           gravity={gravity}
+          wind={wind}
           stageWidth={dimensions.width}
           onSave={handleSave}
           onClose={() => setSettingsOpen(false)}

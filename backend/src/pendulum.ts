@@ -20,13 +20,17 @@ import type { PendulumMqttClient } from "./mqttClient.js";
 sin(angle) = x / l => x = l * sin(angle)
 cos(angle) = y / l => y = l * cos(angle)
 
+### References for adding the wind component:
+
+- The Code Train - Simulating Forces: Gravity and Wind - The Nature of Code: https://www.youtube.com/watch?v=Uibl0UE4VH8
+- The Nature of Code - https://natureofcode.com/forces/#force-accumulation
+
  */
 
 enum Command {
   RESTART = "RESTART",
   STOP = "STOP",
   PAUSE = "PAUSE",
-  START = "START",
 }
 
 const PEER_TTL_MS = 150;
@@ -36,6 +40,7 @@ const ELECTION_WINDOW_MS = 200;
 const COORDINATOR_TIMEOUT_MS = 8000;
 // How long a follower waits for RESTART before self-restarting
 const FOLLOWER_TIMEOUT_MS = 10000;
+const dt = 0.4; // < 1 slows down, > 1 speeds up
 
 type CollisionRole = "none" | "detector" | "coordinator" | "follower";
 
@@ -71,7 +76,8 @@ export class Pendulum {
     private mass: number,
     private pivotPosition: Point,
     private mqttClient: PendulumMqttClient | null = null,
-    private gravity: number = 2,
+    private gravity: number = 9.8,
+    private wind: number = 0,
   ) {
     this.init();
     this.start();
@@ -320,12 +326,20 @@ export class Pendulum {
     this.gravity = value;
   }
 
+  setWind(value: number): void {
+    if (!isFinite(value)) return;
+    this.wind = value;
+  }
+
   // Update the pendulum's position to next frame
   nextPosition(): void {
-    const resultantForce = this.gravity * Math.sin(this.angle!);
-    const angleAccel = (-1 * resultantForce) / this.length;
-    this.angleVelocity! += angleAccel;
-    this.angle! += this.angleVelocity!;
+    const resultantGravityForce = this.gravity * Math.sin(this.angle!);
+    const resultantWindForce = this.wind * Math.cos(this.angle!);
+    const gravityAngleAccel = (-1 * resultantGravityForce) / this.length;
+    const windAngleAccel = resultantWindForce / (this.mass * this.length);
+    const angleAccel = gravityAngleAccel + windAngleAccel;
+    this.angleVelocity! += angleAccel * dt;
+    this.angle! += this.angleVelocity! * dt;
     this.bobPosition!.x = this.length * Math.sin(this.angle!);
     this.bobPosition!.y = this.length * Math.cos(this.angle!);
   }

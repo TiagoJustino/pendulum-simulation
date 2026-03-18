@@ -23,7 +23,7 @@ describe("Pendulum", () => {
 
       // Run until x goes negative (bob crossed equilibrium)
       let crossedMiddle = false;
-      for (let i = 0; i < 500; i++) {
+      for (let i = 0; i < 1500; i++) {
         pendulum.nextPosition();
         if (pendulum.getRelativeBobPosition().x < 0) {
           crossedMiddle = true;

@@ -2,10 +2,7 @@ import { Circle, Group, Line } from "react-konva";
 import type { AbsolutePosition, Point } from "@pendulum-simulation/common";
 import { useMqttSubscribe } from "@artcom/mqtt-topping-react";
 import { useEffect, useState } from "react";
-import {
-  useDeletePendulum,
-  useInitPendulum,
-} from "./hooks/usePendulum.ts";
+import { useDeletePendulum, useInitPendulum } from "./hooks/usePendulum.ts";
 import type { InitPendulumRequestDto } from "@pendulum-simulation/common";
 
 interface Props {
@@ -16,7 +13,13 @@ interface Props {
   onReady: (index: number, id: string) => void;
 }
 
-const Pendulum = ({ index, config, configVersion, enabled, onReady }: Props) => {
+const Pendulum = ({
+  index,
+  config,
+  configVersion,
+  enabled,
+  onReady,
+}: Props) => {
   const [bobPosition, setBobPosition] = useState<Point | null>(null);
 
   const { angle, length, mass, pivotPosition } = config;
@@ -68,7 +71,12 @@ const Pendulum = ({ index, config, configVersion, enabled, onReady }: Props) => 
         strokeWidth={2}
         stroke="black"
       />
-      <Circle x={displayBobPosition.x} y={displayBobPosition.y} radius={mass} fill="black" />
+      <Circle
+        x={displayBobPosition.x}
+        y={displayBobPosition.y}
+        radius={mass}
+        fill="black"
+      />
     </Group>
   );
 };

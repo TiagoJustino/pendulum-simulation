@@ -11,7 +11,13 @@ interface Props {
   onReady: (index: number, id: string) => void;
 }
 
-const ResponsiveStage = ({ width, height, pendulumConfigs, configVersion, onReady }: Props) => {
+const ResponsiveStage = ({
+  width,
+  height,
+  pendulumConfigs,
+  configVersion,
+  onReady,
+}: Props) => {
   const { data: clearResponse } = useClear();
   const enabled = clearResponse?.success ?? false;
 

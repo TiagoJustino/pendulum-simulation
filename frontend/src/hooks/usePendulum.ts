@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  useMutation,
-  type UseMutationResult,
-} from "@tanstack/react-query";
+import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 import { useMqttSubscribe } from "@artcom/mqtt-topping-react";
 import type {
   ClearResponseDto,
@@ -147,6 +144,18 @@ export const useUpdateGravity = () =>
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ gravity }),
+      });
+      return await res.json();
+    },
+  });
+
+export const useUpdateWind = () =>
+  useMutation({
+    mutationFn: async (wind: number) => {
+      const res = await fetch(`${API_BASE}/wind`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wind }),
       });
       return await res.json();
     },

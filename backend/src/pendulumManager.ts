@@ -26,7 +26,11 @@ export class PendulumManager {
       console.log(`[${id}]: [${msg.toString().trim()}]`);
     });
     const initialCommand =
-      this.state === "running" ? "PLAY" : this.state === "paused" ? "PAUSE" : "STOP";
+      this.state === "running"
+        ? "PLAY"
+        : this.state === "paused"
+          ? "PAUSE"
+          : "STOP";
     this.instances[id].send({ command: initialCommand });
     return id;
   }
@@ -66,6 +70,12 @@ export class PendulumManager {
   setGravity(value: number): void {
     for (const id of Object.keys(this.instances)) {
       this.instances[id]?.send({ command: "SET_GRAVITY", gravity: value });
+    }
+  }
+
+  setWind(value: number): void {
+    for (const id of Object.keys(this.instances)) {
+      this.instances[id]?.send({ command: "SET_WIND", wind: value });
     }
   }
 

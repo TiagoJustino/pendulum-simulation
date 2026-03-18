@@ -6,7 +6,11 @@ import express, {
 } from "express";
 import cors from "cors";
 import { PendulumManager } from "./pendulumManager.js";
-import { validatePendulumInput, validateGravityInput } from "./validation.js";
+import {
+  validatePendulumInput,
+  validateGravityInput,
+  validateWindInput,
+} from "./validation.js";
 
 export function createApp() {
   const app: Application = express();
@@ -61,6 +65,16 @@ export function createApp() {
       return;
     }
     manager.setGravity(result.data.gravity);
+    res.status(200).json({ success: true });
+  });
+
+  app.post("/wind", (req: Request, res: Response) => {
+    const result = validateWindInput(req.body);
+    if ("error" in result) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    manager.setWind(result.data.wind);
     res.status(200).json({ success: true });
   });
 
