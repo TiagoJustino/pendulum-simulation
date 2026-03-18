@@ -16,7 +16,7 @@ const mass = parseFloat(process.argv[5]!);
 const pivotX = parseFloat(process.argv[6]!);
 const pivotY = parseFloat(process.argv[7]!);
 
-const mqttClient = await mqtt.connectAsync("mqtt://127.0.0.1:1883");
+const mqttClient = await mqtt.connectAsync(process.env.MQTT_URL ?? "mqtt://127.0.0.1:1883");
 const pendulumMqttClient = new PendulumMqttClient(id, mqttClient);
 const pendulum = pendulumFactory(
   angle,

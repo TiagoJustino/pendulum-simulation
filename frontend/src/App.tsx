@@ -183,7 +183,7 @@ function AppInner() {
 
 function App() {
   return (
-    <MqttProvider uri="ws://127.0.0.1:3002/mqtt">
+    <MqttProvider uri={import.meta.env.VITE_MQTT_WS_URL ?? "ws://127.0.0.1:3002/mqtt"}>
       <AppInner />
     </MqttProvider>
   );

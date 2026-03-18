@@ -15,7 +15,10 @@ import {
 export function createApp() {
   const app: Application = express();
 
-  app.use(cors({ origin: ["http://localhost:5173", "http://localhost:4173"] }));
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",")
+    : ["http://localhost:5173", "http://localhost:4173"];
+  app.use(cors({ origin: allowedOrigins }));
   app.use(express.json());
 
   const manager = new PendulumManager();
